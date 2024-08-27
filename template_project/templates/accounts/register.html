@@ -26,14 +26,6 @@
                             {% render_field form.email class="form-control" id="floatingInput" placeholder="Email address" %}
                             <label for="{{ form.email.id_for_label }}">Email address</label>
                         </div>
-                        <div class="form-floating mb-3">
-                            {% render_field form.role class="form-control" id="floatingRole" placeholder="Select Role" %}
-                            <label for="{{ form.role.id_for_label }}">Role</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            {% render_field form.organization class="form-control" id="floatingOrganization" placeholder="Organization" %}
-                            <label for="{{ form.organization.id_for_label }}">Organization</label>
-                        </div>
                         <div class="form-floating mb-4">
                             {% render_field form.password1 class="form-control" id="floatingPassword" placeholder="Password" %}
                             <label for="{{ form.password1.id_for_label }}">Password</label>
@@ -66,3 +58,4 @@
     <!-- Sign Up End -->
 
 {% endblock %}
+ 
