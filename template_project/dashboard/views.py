@@ -1,16 +1,28 @@
 import polars as pl
-from django.shortcuts import render
-from data_source.models import SensorData
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from data_source.models import SensorData, SensorLocation
 from .utils import generate_line_chart
 
+@login_required
 def main_dashboard_view(request):
-    # Query sensor data for sensor_id = 2
-    sensor_data_queryset = SensorData.objects.filter(sensor_id=2).values('timestamp', 'temperature', 'humidity', 'precipitation')
+    # Get the logged-in user's organization
+    user_organization = request.user.organization
 
-    # Convert QuerySet to list of dictionaries
+    # Find the sensor with the lowest ID for this organization
+    sensor = SensorLocation.objects.filter(organization=user_organization).order_by('id').first()
+
+    if sensor is None:
+        # Handle the case where there are no sensors for this organization
+        return render(request, 'dashboard/main_dashboard.html', {
+            'error': 'No sensors available for your organization.'
+        })
+
+    # Query sensor data for the selected sensor
+    sensor_data_queryset = SensorData.objects.filter(sensor=sensor).values('timestamp', 'temperature', 'humidity', 'precipitation')
+
+    # Convert QuerySet to list of dictionaries and then to Polars DataFrame
     sensor_data_list = list(sensor_data_queryset)
-
-    # Convert query result to Polars DataFrame
     df = pl.DataFrame(sensor_data_list)
 
     # Generate the line charts for temperature, humidity, and precipitation
@@ -35,10 +47,12 @@ def main_dashboard_view(request):
         y_axis="Precipitation (mm)"
     )
 
+    # Pass the charts to the template context
     context = {
         'temperature_chart': temperature_chart,
         'humidity_chart': humidity_chart,
         'precipitation_chart': precipitation_chart,
+        'sensor_name': sensor.name  # Include the sensor name for display
     }
 
     return render(request, 'dashboard/main_dashboard.html', context)
