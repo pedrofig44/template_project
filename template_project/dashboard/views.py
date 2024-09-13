@@ -1,7 +1,8 @@
 import polars as pl
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from data_source.models import SensorData, SensorLocation
+from data_source.models import SensorDataDummy
+from location.models import SensorLocation
 from .utils import generate_line_chart
 
 @login_required
@@ -12,6 +13,8 @@ def main_dashboard_view(request):
     # Find the sensor with the lowest ID for this organization
     sensor = SensorLocation.objects.filter(organization=user_organization).order_by('id').first()
 
+    print(sensor)
+
     if sensor is None:
         # Handle the case where there are no sensors for this organization
         return render(request, 'dashboard/main_dashboard.html', {
@@ -19,7 +22,7 @@ def main_dashboard_view(request):
         })
 
     # Query sensor data for the selected sensor
-    sensor_data_queryset = SensorData.objects.filter(sensor=sensor).values('timestamp', 'temperature', 'humidity', 'precipitation')
+    sensor_data_queryset = SensorDataDummy.objects.filter(sensor=sensor).values('timestamp', 'temperature', 'humidity', 'precipitation')
 
     # Convert QuerySet to list of dictionaries and then to Polars DataFrame
     sensor_data_list = list(sensor_data_queryset)

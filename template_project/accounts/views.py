@@ -1,11 +1,14 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
-from .forms import CustomUserCreationForm, ProfileUpdateForm
 from django.contrib import messages, auth
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
+
+from .forms import CustomUserCreationForm, ProfileUpdateForm, ForgotPasswordForm
 from .models import CustomUser
+
 from accounts.utils import send_verification_email
+
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 
@@ -71,22 +74,27 @@ def logout(request):
 
 def forgot_password_view(request):
     if request.method == 'POST':
-        email = request.POST['email']
+        form = ForgotPasswordForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
 
-        if CustomUser.objects.filter(email=email).exists():
-            user = CustomUser.objects.get(email__exact=email)
+            if CustomUser.objects.filter(email=email).exists():
+                user = CustomUser.objects.get(email__exact=email)
 
-            # Send reset password email using utility function
-            mail_subject = 'Reset Your Password'
-            email_template = 'accounts/emails/reset_password_email.html'
-            send_verification_email(request, user, mail_subject, email_template)
+                # Send reset password email using utility function
+                mail_subject = 'Reset Your Password'
+                email_template = 'accounts/emails/reset_password_email.html'
+                send_verification_email(request, user, mail_subject, email_template)
 
-            messages.success(request, 'Password reset link has been sent to your email address.')
-            return redirect('login')
-        else:
-            messages.error(request, 'Account does not exist.')
-            return redirect('forgot_password')
-    return render(request, 'accounts/forgot_password.html')
+                messages.success(request, 'Password reset link has been sent to your email address.')
+                return redirect('forgot_password')
+            else:
+                messages.error(request, 'Account does not exist.')
+                return redirect('forgot_password')
+    else:
+        form = ForgotPasswordForm()  # Show an empty form on GET request
+
+    return render(request, 'accounts/forgot_password.html', {'form': form})
 
 def reset_password_view(request):
     """

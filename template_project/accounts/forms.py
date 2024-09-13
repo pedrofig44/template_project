@@ -26,3 +26,10 @@ class ProfileUpdateForm(forms.ModelForm):
             profile.save()
         return profile
     
+class ForgotPasswordForm(forms.Form):
+    email = forms.EmailField(widget=forms.EmailInput(attrs={
+        'placeholder': 'Enter your email',
+        'class': 'form-control',  # You can set default classes if needed
+        'id': 'emailInput'
+    }))
+    
