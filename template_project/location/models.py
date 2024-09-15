@@ -1,5 +1,6 @@
 from django.db import models
 from accounts.models import Organization
+from django.core.validators import RegexValidator
 
 # Country Model
 class Country(models.Model):
@@ -13,10 +14,14 @@ class Country(models.Model):
 class Distrito(models.Model):
     country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='distritos')
     name = models.CharField(max_length=100)
-    location_id = models.CharField(max_length=7, unique=True)
+    location_id = models.CharField(
+        max_length=7,
+        unique=True,
+        validators=[RegexValidator(r'^\d{7}$', 'Location ID must be a 7-digit number.')]
+    )  # Unique 7-digit identifier for the district
 
     def __str__(self):
-        return f"{self.name}, {self.country.name}"
+        return f"{self.name}, {self.country.name} (ID: {self.location_id})"
 
 # Concelho (Municipality) Model
 class Concelho(models.Model):
@@ -46,15 +51,19 @@ class Address(models.Model):
     def __str__(self):
         return f"{self.street}, {self.number}, {self.concelho.name}, {self.postal_code}"
 
-# SensorLocation Model
-class SensorLocation(models.Model):
-    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='sensor_locations')
-    district = models.ForeignKey(Distrito, on_delete=models.CASCADE, related_name='sensor_locations')
+
+    # SensorInfo Model
+class SensorInfo(models.Model):
+    sensor_id = models.CharField(
+        max_length=8,
+        validators=[RegexValidator(r'^\d{8}$', 'Sensor ID must be an 8-digit number.')]
+    )  # Unique 8-digit identifier for the sensor
     coordinates = models.ForeignKey(Coordinates, on_delete=models.CASCADE, related_name='sensor_locations')
-    name = models.CharField(max_length=255)
+    manufacturer = models.CharField(max_length=255, null=True, blank=True)  # Manufacturer of the sensor
+    model = models.CharField(max_length=255, null=True, blank=True)  # Model name of the sensor
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='sensor_locations', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.model} ({self.sensor_id})"

@@ -2,7 +2,7 @@ import polars as pl
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from data_source.models import SensorDataDummy
-from location.models import SensorLocation
+from location.models import SensorInfo
 from .utils import generate_line_chart
 
 @login_required
@@ -11,7 +11,7 @@ def main_dashboard_view(request):
     user_organization = request.user.organization
 
     # Find the sensor with the lowest ID for this organization
-    sensor = SensorLocation.objects.filter(organization=user_organization).order_by('id').first()
+    sensor = SensorInfo.objects.filter(organization=user_organization).order_by('id').first()
 
     print(sensor)
 
@@ -55,7 +55,7 @@ def main_dashboard_view(request):
         'temperature_chart': temperature_chart,
         'humidity_chart': humidity_chart,
         'precipitation_chart': precipitation_chart,
-        'sensor_name': sensor.name  # Include the sensor name for display
+        'sensor_name': sensor.model  # Include the sensor name for display
     }
 
     return render(request, 'dashboard/main_dashboard.html', context)
