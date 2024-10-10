@@ -1,48 +1,70 @@
 {% extends 'includes/base.html' %}
 
-
 {% block content %}
-    <!-- Chart Start -->
-    <div class="container-fluid pt-4 px-4">
-        <h3>Data for Sensor: {{ sensor_name }}</h3>
+<div class="container-fluid pt-4 px-4">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-6">
+            <h3>Data for Sensor: {{ sensor_name }}</h3>
+        </div>
+        <div class="col-md-6 text-end">
+            <form method="get" class="d-inline-block">
+                <label for="time_range" class="me-2">Select Time Range:</label>
+                <select
+                    id="time_range"
+                    name="time_range"
+                    class="form-select d-inline-block w-auto"
+                    hx-get="{% url 'dashboard:main_dashboard' %}"
+                    hx-target="#charts-container"
+                    hx-swap="innerHTML"
+                >
+                    <option value="all" {% if time_range == 'all' %}selected{% endif %}>All Time</option>
+                    <option value="last_week" {% if time_range == 'last_week' %}selected{% endif %}>Last Week</option>
+                    <option value="last_month" {% if time_range == 'last_month' %}selected{% endif %}>Last Month</option>
+                    <option value="last_year" {% if time_range == 'last_year' %}selected{% endif %}>Last Year</option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Charts Container -->
+    <div id="charts-container">
+        <!-- Existing Chart Containers -->
         <div class="row g-4">
             <div class="col-sm-12 col-xl-6">
                 <div class="bg-light rounded h-100 p-4">
-                    <h6 class="mb-4">Temperature Chart</h6>
                     <div id="temperature-chart"></div>
                 </div>
             </div>
             <div class="col-sm-12 col-xl-6">
                 <div class="bg-light rounded h-100 p-4">
-                    <h6 class="mb-4">Humidity Chart</h6>
                     <div id="humidity-chart"></div>
                 </div>
             </div>
             <div class="col-sm-12 col-xl-6">
                 <div class="bg-light rounded h-100 p-4">
-                    <h6 class="mb-4">Precipitation Chart</h6>
                     <div id="precipitation-chart"></div>
                 </div>
             </div>
         </div>
+        <!-- Chart Rendering Script -->
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <script>
+             (function() {
+                // Render the temperature chart
+                const temperatureChart = JSON.parse('{{ temperature_chart|escapejs }}');
+                Plotly.newPlot('temperature-chart', temperatureChart.data, temperatureChart.layout);
+                
+                // Render the humidity chart
+                const humidityChart = JSON.parse('{{ humidity_chart|escapejs }}');
+                Plotly.newPlot('humidity-chart', humidityChart.data, humidityChart.layout);
+                
+                // Render the precipitation chart
+                const precipitationChart = JSON.parse('{{ precipitation_chart|escapejs }}');
+                Plotly.newPlot('precipitation-chart', precipitationChart.data, precipitationChart.layout);
+            })();
+        </script>
     </div>
-    <!-- Chart End -->
+</div>
 
-
-
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<script>
-    // Render the temperature chart
-    const temperatureChart = JSON.parse('{{ temperature_chart|escapejs }}');
-    Plotly.newPlot('temperature-chart', temperatureChart.data, temperatureChart.layout);
-
-    // Render the humidity chart
-    const humidityChart = JSON.parse('{{ humidity_chart|escapejs }}');
-    Plotly.newPlot('humidity-chart', humidityChart.data, humidityChart.layout);
-
-    // Render the precipitation chart
-    const precipitationChart = JSON.parse('{{ precipitation_chart|escapejs }}');
-    Plotly.newPlot('precipitation-chart', precipitationChart.data, precipitationChart.layout);
-</script>
 
 {% endblock %}

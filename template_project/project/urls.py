@@ -6,6 +6,6 @@ urlpatterns = [
     path('', include('accounts.urls')),
     path('', include('analytics.urls')),
     path('', include('api.urls')),
-    path('', include('dashboard.urls')),
+    path('', include('dashboard.urls', namespace='dashboard')),
     path('', include('data_source.urls')),
 ]
