@@ -46,25 +46,78 @@
                 </div>
             </div>
         </div>
-        <!-- Chart Rendering Script -->
-        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-        <script>
-             (function() {
-                // Render the temperature chart
-                const temperatureChart = JSON.parse('{{ temperature_chart|escapejs }}');
-                Plotly.newPlot('temperature-chart', temperatureChart.data, temperatureChart.layout);
-                
-                // Render the humidity chart
-                const humidityChart = JSON.parse('{{ humidity_chart|escapejs }}');
-                Plotly.newPlot('humidity-chart', humidityChart.data, humidityChart.layout);
-                
-                // Render the precipitation chart
-                const precipitationChart = JSON.parse('{{ precipitation_chart|escapejs }}');
-                Plotly.newPlot('precipitation-chart', precipitationChart.data, precipitationChart.layout);
-            })();
-        </script>
     </div>
 </div>
+
+<!-- Chart Rendering Script -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+    // Function to render charts
+    function renderCharts() {
+        (function() {
+            // Render the temperature chart
+            const temperatureChart = JSON.parse('{{ temperature_chart|escapejs }}');
+            Plotly.newPlot('temperature-chart', temperatureChart.data, temperatureChart.layout);
+
+            // Render the humidity chart
+            const humidityChart = JSON.parse('{{ humidity_chart|escapejs }}');
+            Plotly.newPlot('humidity-chart', humidityChart.data, humidityChart.layout);
+
+            // Render the precipitation chart
+            const precipitationChart = JSON.parse('{{ precipitation_chart|escapejs }}');
+            Plotly.newPlot('precipitation-chart', precipitationChart.data, precipitationChart.layout);
+        })();
+    }
+
+    // Function to update Plotly charts
+    function updateCharts() {
+        const isNightMode = document.body.classList.contains('night-mode');
+        const bgColor = isNightMode ? '#191C24' : '#f8f9fa';
+        const fontColor = isNightMode ? '#ffffff' : '#000000';
+
+        // Update each chart's layout
+        Plotly.relayout('temperature-chart', {
+            'paper_bgcolor': bgColor,
+            'plot_bgcolor': bgColor,
+            'font.color': fontColor,
+            'xaxis.color': fontColor,
+            'yaxis.color': fontColor
+        });
+        Plotly.relayout('humidity-chart', {
+            'paper_bgcolor': bgColor,
+            'plot_bgcolor': bgColor,
+            'font.color': fontColor,
+            'xaxis.color': fontColor,
+            'yaxis.color': fontColor
+        });
+        Plotly.relayout('precipitation-chart', {
+            'paper_bgcolor': bgColor,
+            'plot_bgcolor': bgColor,
+            'font.color': fontColor,
+            'xaxis.color': fontColor,
+            'yaxis.color': fontColor
+        });
+    }
+
+    // Initial chart rendering
+    document.addEventListener('DOMContentLoaded', function() {
+        renderCharts();
+        updateCharts();
+    });
+
+    // Listen for the custom night mode toggle event
+    document.addEventListener('nightModeToggled', function() {
+        updateCharts();
+    });
+
+    // Re-render charts after HTMX content swap
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        if (event.detail.target.id === 'charts-container') {
+            renderCharts();
+            updateCharts();
+        }
+    });
+</script>
 
 
 {% endblock %}

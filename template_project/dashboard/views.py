@@ -43,26 +43,32 @@ def main_dashboard_view(request):
     sensor_data_list = list(sensor_data_queryset.values('timestamp', 'temperature', 'humidity', 'precipitation'))
     df = pl.DataFrame(sensor_data_list)
 
+     # Determine background color based on cookie (or default)
+    bg_color = '#191C24' if request.COOKIES.get('nightMode') == 'enabled' else '#f8f9fa'
+
     # Generate the line charts
     temperature_chart = generate_line_chart(
         df.select(['timestamp', 'temperature']),
         title="Temperature Over Time",
         x_axis="Timestamp",
-        y_axis="Temperature (°C)"
+        y_axis="Temperature (°C)",
+        bg_color=bg_color
     )
 
     humidity_chart = generate_line_chart(
         df.select(['timestamp', 'humidity']),
         title="Humidity Over Time",
         x_axis="Timestamp",
-        y_axis="Humidity (%)"
+        y_axis="Humidity (%)",
+        bg_color=bg_color
     )
 
     precipitation_chart = generate_line_chart(
         df.select(['timestamp', 'precipitation']),
         title="Precipitation Over Time",
         x_axis="Timestamp",
-        y_axis="Precipitation (mm)"
+        y_axis="Precipitation (mm)",
+        bg_color=bg_color
     )
 
     # Prepare context

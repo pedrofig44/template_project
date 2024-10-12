@@ -22,7 +22,7 @@ def login_view(request):
             if user is not None:
                 auth.login(request, user)
                 messages.success(request, f'Welcome, {username}!')
-                return redirect('main_dashboard')
+                return redirect('dashboard:main_dashboard')
             else:
                 messages.error(request, 'Invalid username or password.')
         else:

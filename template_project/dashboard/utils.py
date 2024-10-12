@@ -4,7 +4,7 @@ import plotly.graph_objs as go
 import json
 import plotly
 
-def generate_line_chart(df: pl.DataFrame, title: str, x_axis: str, y_axis: str) -> str:
+def generate_line_chart(df: pl.DataFrame, title: str, x_axis: str, y_axis: str, bg_color='#F3F6F9') -> str:
     if df.is_empty():
         # Create a trace with empty data
         trace = go.Scatter(
@@ -31,8 +31,8 @@ def generate_line_chart(df: pl.DataFrame, title: str, x_axis: str, y_axis: str) 
             size=12,
             color="#000000"
         ),
-        paper_bgcolor='#f8f9fa',
-        plot_bgcolor='#f8f9fa',
+        paper_bgcolor=bg_color,
+        plot_bgcolor=bg_color,
         margin=dict(l=40, r=40, t=60, b=40),
         hovermode='closest',
     )

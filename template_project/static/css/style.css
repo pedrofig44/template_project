@@ -1,8 +1,9 @@
 /********** Template CSS **********/
 :root {
-    --primary: #009CFF;
+    --primary: #009CFF; /* Blue shade */
     --light: #F3F6F9;
     --dark: #191C24;
+    --night-mode-text: #6C7293;
 }
 
 .back-to-top {
@@ -12,7 +13,6 @@
     bottom: 45px;
     z-index: 99;
 }
-
 
 /*** Spinner ***/
 #spinner {
@@ -28,7 +28,6 @@
     opacity: 1;
 }
 
-
 /*** Button ***/
 .btn {
     transition: .5s;
@@ -36,34 +35,26 @@
 
 .btn.btn-primary {
     color: #FFFFFF;
+    background-color: var(--primary);
+    border-color: var(--primary);
 }
 
-.btn-square {
-    width: 38px;
-    height: 38px;
+.btn:hover,
+.btn:focus {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: #FFFFFF;
 }
 
-.btn-sm-square {
-    width: 32px;
-    height: 32px;
+/* Ensure toggles and other interactive elements use blue shade */
+.form-check-input:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
 }
 
-.btn-lg-square {
-    width: 48px;
-    height: 48px;
+.form-switch .form-check-input:focus {
+    border-color: var(--primary);
 }
-
-.btn-square,
-.btn-sm-square,
-.btn-lg-square {
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: normal;
-    border-radius: 50px;
-}
-
 
 /*** Layout ***/
 .sidebar {
@@ -119,7 +110,6 @@
         margin-left: 0;
     }
 }
-
 
 /*** Navbar ***/
 .sidebar .navbar .navbar-nav .nav-link {
@@ -216,6 +206,10 @@
     }
 }
 
+/*** Headings ***/
+h1, h2, h3 {
+    color: var(--primary);
+}
 
 /*** Date Picker ***/
 .bootstrap-datetimepicker-widget.bottom {
@@ -244,13 +238,12 @@
     border-bottom-color: var(--primary);
 }
 
-
-/*** Testimonial ***/
+/*** Progress Bar ***/
 .progress .progress-bar {
     width: 0px;
     transition: 2s;
+    background-color: var(--primary);
 }
-
 
 /*** Testimonial ***/
 .testimonial-carousel .owl-dots {
@@ -275,3 +268,126 @@
     background: var(--dark);
     border-color: var(--primary);
 }
+
+/* Night mode styles */
+.night-mode {
+    background-color: #191C24 !important;
+    color: var(--night-mode-text) !important;
+}
+
+.night-mode .bg-light {
+    background-color: #191C24 !important;
+}
+
+.night-mode .bg-secondary {
+    background-color: #191C24 !important;
+}
+
+.night-mode .navbar, .night-mode .sidebar {
+    background-color: #191C24 !important;
+}
+
+.night-mode .navbar .navbar-nav .nav-link,
+.night-mode .navbar .navbar-nav .nav-link i,
+.night-mode .navbar .navbar-brand,
+.night-mode .sidebar .navbar .navbar-nav .nav-link,
+.night-mode .sidebar .navbar .navbar-nav .nav-link i {
+    color: var(--night-mode-text) !important;
+}
+
+.night-mode .form-control,
+.night-mode .form-select {
+    background-color: #2a2d37 !important;
+    color: var(--night-mode-text) !important;
+    border-color: #444a53 !important;
+}
+
+.night-mode .dropdown-menu {
+    background-color: #191C24 !important;
+    color: var(--night-mode-text) !important;
+}
+
+.night-mode .content {
+    background: #121317 !important; /* Darker content area */
+}
+
+.night-mode h1,
+.night-mode h2,
+.night-mode h3 {
+    color: var(--primary) !important; /* Blue headings */
+}
+
+.night-mode p,
+.night-mode a,
+.night-mode span,
+.night-mode label {
+    color: var(--night-mode-text) !important;
+}
+
+.night-mode .btn {
+    color: var(--night-mode-text) !important;
+}
+
+.night-mode .btn.btn-primary {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    color: #FFFFFF !important;
+}
+
+.night-mode .btn:hover,
+.night-mode .btn:focus {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    color: #FFFFFF !important;
+}
+
+.night-mode .progress {
+    background-color: #2a2d37 !important;
+}
+
+.night-mode .progress .progress-bar {
+    background-color: var(--primary) !important;
+}
+
+.night-mode .table {
+    background-color: #191C24 !important;
+    color: var(--night-mode-text) !important;
+}
+
+.night-mode .table thead th {
+    background-color: #2a2d37 !important;
+    color: var(--night-mode-text) !important;
+}
+
+.night-mode .table tbody tr:nth-child(even) {
+    background-color: #1f222a !important;
+}
+
+.night-mode .table tbody tr:hover {
+    background-color: #2a2d37 !important;
+}
+
+.night-mode .form-check-input {
+    background-color: #2a2d37 !important;
+    border-color: #444a53 !important;
+}
+
+.night-mode .form-check-input:checked {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+.night-mode .form-switch .form-check-input:focus {
+    border-color: var(--primary) !important;
+}
+
+/* Hover effects in night mode */
+.night-mode .nav-link:hover,
+.night-mode .dropdown-item:hover,
+.night-mode .btn:hover,
+.night-mode .btn:focus {
+    color: var(--primary) !important;
+}
+
+/* Adjust other elements as needed */
+/* Ensure that all hover effects, animations, and toggles use the blue shade */

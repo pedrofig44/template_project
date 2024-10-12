@@ -5,7 +5,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>DASHMIN - Bootstrap Admin Template</title>
+    <title>Dashboard - Bootstrap Admin Template</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="" name="keywords">
     <meta content="" name="description">
@@ -157,8 +157,14 @@
                         <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
                             <a href="#" class="dropdown-item">My Profile</a>
                             <a href="{% url 'profile' %}" class="dropdown-item">Settings</a>
-                            <a href="{% url 'logout' %}" class="dropdown-item">Log Out</a>
-                        </div>
+                            <div class="dropdown-item">
+                                <div class="form-check form-switch">
+                                    <label class="form-check-label" for="nightModeToggle">Night Mode</label>
+                                    <input class="form-check-input" type="checkbox" id="nightModeToggle">
+                                </div>
+                            </div>
+                            <a href="{% url 'logout' %}" class="dropdown-item">Log Out</a>                            
+                        </div>                        
                     </div>
                 </div>
             </nav>
@@ -190,6 +196,48 @@
 
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+
+
+    <script>
+        // Function to toggle night mode
+        function toggleNightMode() {
+            const nightModeToggle = document.getElementById('nightModeToggle');
+            const isNightMode = nightModeToggle && nightModeToggle.checked;
+            const body = document.body;
+
+            if (isNightMode) {
+                body.classList.add('night-mode');
+                localStorage.setItem('nightMode', 'enabled');
+                document.cookie = "nightMode=enabled; path=/";
+            } else {
+                body.classList.remove('night-mode');
+                localStorage.setItem('nightMode', 'disabled');
+                document.cookie = "nightMode=disabled; path=/";
+            }
+
+            // Dispatch a custom event to notify other scripts
+            document.dispatchEvent(new Event('nightModeToggled'));
+        }
+
+        // Event listener for the night mode toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const nightModeToggle = document.getElementById('nightModeToggle');
+
+            // Load night mode preference from localStorage
+            const nightModeSetting = localStorage.getItem('nightMode');
+            if (nightModeSetting === 'enabled') {
+                if (nightModeToggle) {
+                    nightModeToggle.checked = true;
+                }
+                document.body.classList.add('night-mode');
+            }
+
+            // Add event listener to the toggle switch
+            if (nightModeToggle) {
+                nightModeToggle.addEventListener('change', toggleNightMode);
+            }
+        });
+    </script>
 </body>
 
 </html>

@@ -18,20 +18,19 @@
             </div>
         </div>
     </div>
-    <!-- Chart Rendering Script -->
-    <script>
-        (function() {
-            // Render the temperature chart
-            const temperatureChart = JSON.parse('{{ temperature_chart|escapejs }}');
-            Plotly.newPlot('temperature-chart', temperatureChart.data, temperatureChart.layout);
-
-            // Render the humidity chart
-            const humidityChart = JSON.parse('{{ humidity_chart|escapejs }}');
-            Plotly.newPlot('humidity-chart', humidityChart.data, humidityChart.layout);
-
-            // Render the precipitation chart
-            const precipitationChart = JSON.parse('{{ precipitation_chart|escapejs }}');
-            Plotly.newPlot('precipitation-chart', precipitationChart.data, precipitationChart.layout);
-        })();
-    </script>
 </div>
+<!-- Chart Rendering Script -->
+<script>
+    (function() {
+        // Render the temperature chart
+        const temperatureChart = JSON.parse('{{ temperature_chart|escapejs }}');
+        Plotly.newPlot('temperature-chart', temperatureChart.data, temperatureChart.layout);
+        // Render the humidity chart
+        const humidityChart = JSON.parse('{{ humidity_chart|escapejs }}');
+        Plotly.newPlot('humidity-chart', humidityChart.data, humidityChart.layout);
+        // Render the precipitation chart
+        const precipitationChart = JSON.parse('{{ precipitation_chart|escapejs }}');
+        Plotly.newPlot('precipitation-chart', precipitationChart.data, precipitationChart.layout);
+    })();
+</script>
+
