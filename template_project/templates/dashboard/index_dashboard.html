@@ -1,0 +1,324 @@
+{% extends 'includes/base.html' %}
+{% load static %}
+
+
+{% block content %}
+  
+    
+<div class="container-fluid mt-5">
+    <div class="row mb-3">
+        <div class="col">
+            <h2 class="text-start">Tempo para Hoje -> Lisboa <!-- Insert today's date here in the format YYYY-MM-DD --> 
+                <span class="ml-2" data-toggle="tooltip" data-placement="top" title="Dados recolhidos do IPMA">
+                    <i class="fa fa-info-circle"></i>
+                </span>
+            </h2>
+        </div>
+        <div class="col text-end">
+            <div class="dropdown">
+                <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Lisboa
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item" href="/climate_dashboard/lisboa">
+                        Lisboa
+                        ✓
+                    </a>
+                    <a class="dropdown-item" href="/climate_dashboard/porto">
+                        Porto
+                    </a>
+                    <a class="dropdown-item" href="/climate_dashboard/coimbra">
+                        Coimbra
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <!-- First Card -->
+        <div class="col-12 col-md-6 col-lg-3 mb-4">
+            <div class="card bg-blue-100 border-0 shadow">
+                <div class="card-header d-sm-flex flex-column align-items-center flex-0">
+                    <div class="mb-3 mb-sm-0">
+                        <i class="fa-solid fa-sun fa-9x" style="color: #FFD43B;"></i>
+                    </div>
+                    <h1 class="mt-3">25ºC</h1>
+                    <h2 class="mt-3">Céu Limpo</h2>    
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-start mb-3 mb-sm-0">
+                        <i class="fa-solid fa-location-dot fa-2x"></i>
+                        <h3 class="mb-3 ms-3 ml-2"> Lisboa</h3>
+                    </div>
+                    <div class="d-flex align-items-start mb-3 mb-sm-0">
+                        <i class="fa-solid fa-calendar-days fa-2x"></i>
+                        <h3 class="mb-0 ms-3 ml-2"> 2023-10-10</h3>
+                    </div>
+                    <div class="d-flex align-items-start mt-3 mb-3 mb-sm-0">
+                        <i class="fa-solid fa-clock fa-2x"></i>
+                        <h3 class="mb-0 ms-3 ml-2"> 14:30</h3>
+                    </div>
+                </div>                    
+            </div>
+        </div>
+        <!-- Second Column -->
+        <div class="col-12 col-md-6 col-lg-3 mb-4">
+            <div class="row">
+                <!-- First Card in Column -->
+                <div class="col-12 mb-4">
+                    <div class="card bg-blue-100 border-0 shadow">
+                        <div class="card-body">
+                            <div class="row align-items-center mb-3 mb-sm-0">
+                                <div class="col-4 d-flex justify-content-center">
+                                    <i class="fa-solid fa-arrows-up-down-left-right fa-3x"></i>
+                                </div>
+                                <div class="col-8 align-items-start">
+                                    <h4 class="mb-3 title-card-climate">Direção do Vento</h4>
+                                    <h3 class="mb-3 text-gray">Norte</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>                        
+                </div>
+                <!-- Second Card in Column -->
+                <div class="col-12 mb-4">
+                    <div class="card bg-blue-100 border-0 shadow">
+                        <div class="card-body">
+                            <div class="row align-items-center mb-3 mb-sm-0">
+                                <div class="col-4 d-flex justify-content-center">
+                                    <i class="fa-solid fa-wind fa-3x"></i>
+                                </div>
+                                <div class="col-8 align-items-start">
+                                    <h4 class="mb-3 title-card-climate">Velocidade do Vento</h4>
+                                    <h3 class="mb-3 text-gray">10 Km/h</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Third Card in Column -->
+                <div class="col-12 mb-4">
+                    <div class="card bg-blue-100 border-0 shadow">
+                        <div class="card-body">
+                            <div class="row align-items-center mb-3 mb-sm-0">
+                                <div class="col-4 d-flex justify-content-center">
+                                    <i class="fa-solid fa-droplet fa-3x"></i>
+                                </div>
+                                <div class="col-8 align-items-start">
+                                    <h4 class="mb-3 title-card-climate">Humidade Relativa</h4>
+                                    <h3 class="mb-3 text-gray">60%</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Third Column -->
+        <div class="col-12 col-md-6 col-lg-3 mb-4">
+            <div class="row">
+                <!-- First Card in Column -->
+                <div class="col-12 mb-4">
+                    <div class="card bg-blue-100 border-0 shadow">
+                        <div class="card-body">
+                            <div class="row align-items-center mb-3 mb-sm-0">
+                                <div class="col-4 d-flex justify-content-center">
+                                    <i class="fa-solid fa-fire fa-3x"></i>
+                                </div>
+                                <div class="col-8 align-items-start">
+                                    <h4 class="mb-3 title-card-climate">FWI</h4>
+                                    <h3 class="mb-3 text-gray">Risco Reduzido</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Second Card in Column -->
+                <div class="col-12 mb-4">
+                    <div class="card bg-blue-100 border-0 shadow">
+                        <div class="card-body">
+                            <div class="row align-items-center mb-3 mb-sm-0">
+                                <div class="col-4 d-flex justify-content-center">
+                                    <i class="fa-solid fa-cloud-rain fa-3x"></i>
+                                </div>
+                                <div class="col-8 align-items-start">
+                                    <h4 class="mb-3 title-card-climate">Probabilidade de Chover</h4>
+                                    <h3 class="mb-3 text-gray">10%</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Third Card in Column -->
+                <div class="col-12 mb-4">
+                    <div class="card bg-blue-100 border-0 shadow">
+                        <div class="card-body">
+                            <div class="row align-items-center mb-3 mb-sm-0">
+                                <div class="col-4 d-flex justify-content-center">
+                                    <i class="fa-solid fa-arrows-down-to-line fa-3x"></i>
+                                </div>
+                                <div class="col-8 align-items-start">
+                                    <h4 class="mb-3 title-card-climate">Pressão Atmosférica</h4>
+                                    <h3 class="mb-3 text-gray">1008 hPa</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Fourth Column -->
+        <div class="col-12 col-md-6 col-lg-3 mb-4">
+            <div class="card bg-blue-100 border-0 shadow">
+                <div class="card-body">
+                    <div class="row align-items-center mb-3 mb-sm-0">
+                        <div class="col-4 d-flex justify-content-center">
+                            <i class="fa-solid fa-thermometer-full fa-3x"></i>
+                        </div>
+                        <div class="col-8 align-items-start">
+                            <h4 class="mb-3 title-card-climate">Temperatura Máxima</h4>
+                            <h3 class="mb-3 text-gray">25°C</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center mb-3 mb-sm-0">
+                        <div class="col-4 d-flex justify-content-center">
+                            <i class="fa-solid fa-thermometer-empty fa-3x"></i>
+                        </div>
+                        <div class="col-8 align-items-start">
+                            <h4 class="mb-3 title-card-climate">Temperatura Mínima</h4>
+                            <h3 class="mb-3 text-gray">15°C</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forecasts for next 4 days -->
+    <div class="row mt-3">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="text-start">Próximos 4 dias <!-- Insert today's date here in the format YYYY-MM-DD --> </h2>
+            </div>
+        </div>
+        <div class="container py-5 h-100">
+            <div class="row d-flex justify-content-center align-items-center h-100">
+                <!-- Forecast for day 1 -->
+                <div class="col-md-8 col-lg-6 col-xl-3 mb-4">
+                    <div class="card" style="color: #4B515D;">
+                        <div class="card-body p-4">
+                            <div class="d-flex">
+                                <h6 class="flex-grow-1">2023-10-11</h6>
+                            </div>
+                
+                            <div class="d-flex flex-column text-center mt-5 mb-4">
+                                <h6 class="display-4 mb-0 font-weight-bold" style="color: #1C2331;"> 
+                                    15°C - 25°C
+                                </h6>
+                                <span class="small" style="color: #868B94">Ensolarado</span>
+                            </div>
+                
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1" style="font-size: 1rem;">
+                                    <div><i class="fas fa-wind fa-fw" style="color: #868B94;"></i> <span class="ms-1"> Norte </span></div>
+                                    <div><i class="fas fa-tint fa-fw" style="color: #868B94;"></i> <span class="ms-1"> 10% </span></div>
+                                </div>
+                                <div>
+                                    <i class="fa-solid fa-sun fa-5x"></i>
+                                </div>
+                            </div>        
+                        </div>
+                    </div>  
+                </div>
+                <!-- Forecast for day 2 -->
+                <div class="col-md-8 col-lg-6 col-xl-3 mb-4">
+                    <div class="card" style="color: #4B515D;">
+                        <div class="card-body p-4">
+                            <div class="d-flex">
+                                <h6 class="flex-grow-1">2023-10-12</h6>
+                            </div>
+                
+                            <div class="d-flex flex-column text-center mt-5 mb-4">
+                                <h6 class="display-4 mb-0 font-weight-bold" style="color: #1C2331;"> 
+                                    16°C - 26°C
+                                </h6>
+                                <span class="small" style="color: #868B94">Parcialmente Nublado</span>
+                            </div>
+                
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1" style="font-size: 1rem;">
+                                    <div><i class="fas fa-wind fa-fw" style="color: #868B94;"></i> <span class="ms-1"> Nordeste </span></div>
+                                    <div><i class="fas fa-tint fa-fw" style="color: #868B94;"></i> <span class="ms-1"> 20% </span></div>
+                                </div>
+                                <div>
+                                    <i class="fa-solid fa-cloud-sun fa-5x"></i>
+                                </div>
+                            </div>        
+                        </div>
+                    </div>  
+                </div>
+                <!-- Forecast for day 3 -->
+                <div class="col-md-8 col-lg-6 col-xl-3 mb-4">
+                    <div class="card" style="color: #4B515D;">
+                        <div class="card-body p-4">
+                            <div class="d-flex">
+                                <h6 class="flex-grow-1">2023-10-13</h6>
+                            </div>
+                
+                            <div class="d-flex flex-column text-center mt-5 mb-4">
+                                <h6 class="display-4 mb-0 font-weight-bold" style="color: #1C2331;"> 
+                                    17°C - 27°C
+                                </h6>
+                                <span class="small" style="color: #868B94">Nublado</span>
+                            </div>
+                
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1" style="font-size: 1rem;">
+                                    <div><i class="fas fa-wind fa-fw" style="color: #868B94;"></i> <span class="ms-1"> Leste </span></div>
+                                    <div><i class="fas fa-tint fa-fw" style="color: #868B94;"></i> <span class="ms-1"> 30% </span></div>
+                                </div>
+                                <div>
+                                    <i class="fa-solid fa-cloud fa-5x"></i>
+                                </div>
+                            </div>        
+                        </div>
+                    </div>  
+                </div>
+                <!-- Forecast for day 4 -->
+                <div class="col-md-8 col-lg-6 col-xl-3 mb-4">
+                    <div class="card" style="color: #4B515D;">
+                        <div class="card-body p-4">
+                            <div class="d-flex">
+                                <h6 class="flex-grow-1">2023-10-14</h6>
+                            </div>
+                
+                            <div class="d-flex flex-column text-center mt-5 mb-4">
+                                <h6 class="display-4 mb-0 font-weight-bold" style="color: #1C2331;"> 
+                                    18°C - 28°C
+                                </h6>
+                                <span class="small" style="color: #868B94">Chuva</span>
+                            </div>
+                
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1" style="font-size: 1rem;">
+                                    <div><i class="fas fa-wind fa-fw" style="color: #868B94;"></i> <span class="ms-1"> Sul </span></div>
+                                    <div><i class="fas fa-tint fa-fw" style="color: #868B94;"></i> <span class="ms-1"> 50% </span></div>
+                                </div>
+                                <div>
+                                    <i class="fa-solid fa-cloud-rain fa-5x"></i>
+                                </div>
+                            </div>        
+                        </div>
+                    </div>  
+                </div>
+            </div>     
+        </div>     
+    </div>
+</div>
+
+  
+
+
+{% endblock content %}

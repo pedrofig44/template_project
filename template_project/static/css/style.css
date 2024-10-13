@@ -389,5 +389,14 @@ h1, h2, h3 {
     color: var(--primary) !important;
 }
 
+.night-mode .card {
+    background-color: #1f222a !important;
+    color: var(--night-mode-text) !important;
+}
+
+.night-mode .icon {
+    color: var(--night-mode-text) !important;
+}
+
 /* Adjust other elements as needed */
 /* Ensure that all hover effects, animations, and toggles use the blue shade */

@@ -87,3 +87,7 @@ def main_dashboard_view(request):
     else:
         # Render the full page
         return render(request, 'dashboard/main_dashboard.html', context)
+    
+
+def index_dashboard_view(request):
+     return render(request, 'dashboard/index_dashboard.html')
