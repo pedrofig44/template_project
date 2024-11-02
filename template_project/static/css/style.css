@@ -1,17 +1,20 @@
 /********** Template CSS **********/
 :root {
-    --primary: #009CFF; /* Blue shade */
+    --primary: #005BBB; /* Darker Blue shade for better contrast */
     --light: #F3F6F9;
-    --dark: #191C24;
-    --night-mode-text: #6C7293;
+    --dark: #000000; /* Black for maximum contrast */
+    --text-color: #000000; /* Standard text color */
+    --night-mode-text-color: #E0E0E0; /* Light gray for night mode text */
+    --night-mode-background: #121212; /* Darker background for night mode */
 }
 
-.back-to-top {
-    position: fixed;
-    display: none;
-    right: 45px;
-    bottom: 45px;
-    z-index: 99;
+/* Global Styles */
+body, p, span, a, label {
+    color: var(--text-color);
+}
+
+h1, h2, h3 {
+    color: var(--primary);
 }
 
 /*** Spinner ***/
@@ -31,6 +34,7 @@
 /*** Button ***/
 .btn {
     transition: .5s;
+    color: var(--text-color);
 }
 
 .btn.btn-primary {
@@ -77,6 +81,11 @@
     transition: 0.5s;
 }
 
+.card {
+    background-color: var(--light);
+    color: var(--text-color);
+}
+
 @media (min-width: 992px) {
     .sidebar {
         margin-left: 0;
@@ -114,7 +123,7 @@
 /*** Navbar ***/
 .sidebar .navbar .navbar-nav .nav-link {
     padding: 7px 20px;
-    color: var(--dark);
+    color: var(--text-color);
     font-weight: 500;
     border-left: 3px solid var(--light);
     border-radius: 0 30px 30px 0;
@@ -166,7 +175,7 @@
 .content .navbar .navbar-nav .nav-link {
     margin-left: 25px;
     padding: 12px 0;
-    color: var(--dark);
+    color: var(--text-color);
     outline: none;
 }
 
@@ -269,46 +278,33 @@ h1, h2, h3 {
     border-color: var(--primary);
 }
 
-/* Night mode styles */
+/* Night Mode Styles */
 .night-mode {
-    background-color: #191C24 !important;
-    color: var(--night-mode-text) !important;
+    background-color: var(--night-mode-background) !important;
+    color: var(--night-mode-text-color) !important;
 }
 
-.night-mode .bg-light {
-    background-color: #191C24 !important;
-}
-
-.night-mode .bg-secondary {
-    background-color: #191C24 !important;
-}
-
-.night-mode .navbar, .night-mode .sidebar {
-    background-color: #191C24 !important;
-}
-
-.night-mode .navbar .navbar-nav .nav-link,
-.night-mode .navbar .navbar-nav .nav-link i,
-.night-mode .navbar .navbar-brand,
-.night-mode .sidebar .navbar .navbar-nav .nav-link,
-.night-mode .sidebar .navbar .navbar-nav .nav-link i {
-    color: var(--night-mode-text) !important;
-}
-
-.night-mode .form-control,
-.night-mode .form-select {
-    background-color: #2a2d37 !important;
-    color: var(--night-mode-text) !important;
-    border-color: #444a53 !important;
-}
-
-.night-mode .dropdown-menu {
-    background-color: #191C24 !important;
-    color: var(--night-mode-text) !important;
-}
-
+.night-mode .bg-light,
+.night-mode .bg-secondary,
 .night-mode .content {
-    background: #121317 !important; /* Darker content area */
+    background-color: var(--night-mode-background) !important;
+}
+
+/* 1. Night Mode Navbar and Sidebar Background */
+.night-mode .navbar,
+.night-mode .sidebar {
+    background-color: #1E1E1E !important; /* Replace with your desired color */
+}
+
+/* 2. Night Mode Card Background */
+.night-mode .card {
+    background-color: #1E1E1E !important; /* Same as navbar and sidebar color */
+    color: var(--night-mode-text-color) !important; /* Ensure text is readable */
+}
+
+/* 3. Night Mode Sidebar Icon Color */
+.night-mode .sidebar .navbar-nav .nav-link i {
+    color: #888888 !important; /* Replace with a darker color of your choice */
 }
 
 .night-mode h1,
@@ -320,12 +316,18 @@ h1, h2, h3 {
 .night-mode p,
 .night-mode a,
 .night-mode span,
-.night-mode label {
-    color: var(--night-mode-text) !important;
-}
-
-.night-mode .btn {
-    color: var(--night-mode-text) !important;
+.night-mode label,
+.night-mode .navbar .navbar-nav .nav-link,
+.night-mode .navbar .navbar-brand,
+.night-mode .sidebar .navbar .navbar-nav .nav-link,
+.night-mode .btn,
+.night-mode .form-control,
+.night-mode .form-select,
+.night-mode .table,
+.night-mode .table thead th,
+.night-mode .table tbody tr,
+.night-mode .icon {
+    color: var(--night-mode-text-color) !important;
 }
 
 .night-mode .btn.btn-primary {
@@ -335,40 +337,18 @@ h1, h2, h3 {
 }
 
 .night-mode .btn:hover,
-.night-mode .btn:focus {
-    background-color: var(--primary) !important;
-    border-color: var(--primary) !important;
-    color: #FFFFFF !important;
+.night-mode .btn:focus,
+.night-mode .navbar .navbar-nav .nav-link:hover,
+.night-mode .sidebar .navbar .navbar-nav .nav-link:hover,
+.night-mode .dropdown-item:hover {
+    color: var(--primary) !important;
 }
 
-.night-mode .progress {
-    background-color: #2a2d37 !important;
-}
-
-.night-mode .progress .progress-bar {
-    background-color: var(--primary) !important;
-}
-
-.night-mode .table {
-    background-color: #191C24 !important;
-    color: var(--night-mode-text) !important;
-}
-
-.night-mode .table thead th {
-    background-color: #2a2d37 !important;
-    color: var(--night-mode-text) !important;
-}
-
-.night-mode .table tbody tr:nth-child(even) {
-    background-color: #1f222a !important;
-}
-
-.night-mode .table tbody tr:hover {
-    background-color: #2a2d37 !important;
-}
-
+.night-mode .form-control,
+.night-mode .form-select,
 .night-mode .form-check-input {
-    background-color: #2a2d37 !important;
+    background-color: #1E1E1E !important;
+    color: var(--night-mode-text-color) !important;
     border-color: #444a53 !important;
 }
 
@@ -377,7 +357,23 @@ h1, h2, h3 {
     border-color: var(--primary) !important;
 }
 
-.night-mode .form-switch .form-check-input:focus {
+.night-mode .table tbody tr:nth-child(even) {
+    background-color: #1A1A1A !important;
+}
+
+.night-mode .table tbody tr:hover {
+    background-color: #2A2A2A !important;
+}
+
+.night-mode .progress {
+    background-color: #1E1E1E !important;
+}
+
+.night-mode .progress .progress-bar {
+    background-color: var(--primary) !important;
+}
+
+.night-mode .form-check-input:focus {
     border-color: var(--primary) !important;
 }
 
@@ -386,17 +382,21 @@ h1, h2, h3 {
 .night-mode .dropdown-item:hover,
 .night-mode .btn:hover,
 .night-mode .btn:focus {
+    background-color: #1E1E1E !important;
     color: var(--primary) !important;
 }
 
-.night-mode .card {
-    background-color: #1f222a !important;
-    color: var(--night-mode-text) !important;
+/* Additional Adjustments */
+.night-mode .bootstrap-datetimepicker-widget.dropdown-menu {
+    background-color: #1E1E1E !important;
+    color: var(--night-mode-text-color) !important;
 }
 
-.night-mode .icon {
-    color: var(--night-mode-text) !important;
+.night-mode .bootstrap-datetimepicker-widget table td.active,
+.night-mode .bootstrap-datetimepicker-widget table td.active:hover {
+    background: var(--primary) !important;
 }
 
-/* Adjust other elements as needed */
-/* Ensure that all hover effects, animations, and toggles use the blue shade */
+.night-mode .bootstrap-datetimepicker-widget table td.today::before {
+    border-bottom-color: var(--primary) !important;
+}
