@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     "dashboard",
     "analytics",
     "api",
-    "location"
+    "location",
+    "climate"
 ]
 
 MIDDLEWARE = [

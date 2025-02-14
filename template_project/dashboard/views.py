@@ -7,7 +7,13 @@ from location.models import SensorInfo
 from .utils import generate_line_chart
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib.auth.decorators import user_passes_test
 
+def always_false(user):
+    return False
+
+
+@user_passes_test(always_false)
 @login_required
 def main_dashboard_view(request):
     # Get the logged-in user's organization

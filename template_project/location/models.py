@@ -1,35 +1,115 @@
 from django.db import models
 from accounts.models import Organization
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, MinLengthValidator, MaxLengthValidator
 
-# Country Model
 class Country(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    code = models.CharField(max_length=3, unique=True)  # ISO Alpha-3 country code (e.g., PRT for Portugal)
-
-    def __str__(self):
-        return self.name
-
-# Distrito (District) Model
-class Distrito(models.Model):
-    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='distritos')
+    code = models.CharField(
+        max_length=3, 
+        primary_key=True, 
+        validators=[MinLengthValidator(2), MaxLengthValidator(3)]
+    )
     name = models.CharField(max_length=100)
-    location_id = models.CharField(
-        max_length=7,
-        unique=True,
-        validators=[RegexValidator(r'^\d{7}$', 'Location ID must be a 7-digit number.')]
-    )  # Unique 7-digit identifier for the district
+
+    class Meta:
+        verbose_name_plural = "Countries"
 
     def __str__(self):
-        return f"{self.name}, {self.country.name} (ID: {self.location_id})"
+        return f"{self.name} ({self.code})"
 
-# Concelho (Municipality) Model
+class Region(models.Model):
+    REGION_TYPE_CHOICES = [
+        (1, 'Mainland Portugal'),
+        (2, 'Madeira Archipelago'),
+        (3, 'Azores Archipelago')
+    ]
+    
+    region_code = models.IntegerField(primary_key=True, choices=REGION_TYPE_CHOICES)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.name} ({self.get_region_code_display()})"
+
+class Distrito(models.Model):
+    region = models.ForeignKey(Region, on_delete=models.CASCADE, related_name='distritos')
+    district_code = models.CharField(
+        primary_key=True,
+        max_length=2,
+        validators=[MinLengthValidator(2), MaxLengthValidator(2)],
+        verbose_name="District Code (DICO part 1)"
+    )
+    name = models.CharField(max_length=100)
+    
+    class Meta:
+        ordering = ['district_code']
+
+    def __str__(self):
+        return f"{self.name} (DICO-{self.district_code})"
+
 class Concelho(models.Model):
     distrito = models.ForeignKey(Distrito, on_delete=models.CASCADE, related_name='concelhos')
+    concelho_code = models.CharField(
+        max_length=2,
+        validators=[MinLengthValidator(2), MaxLengthValidator(2)],
+        verbose_name="Municipality Code (DICO part 2)"
+    )
+    dico_code = models.CharField(
+        max_length=4,
+        unique=True,
+        validators=[MinLengthValidator(4), MaxLengthValidator(4)],
+        help_text="Full DICO code (District + Municipality)"
+    )
     name = models.CharField(max_length=100)
+    
+    class Meta:
+        unique_together = ('distrito', 'concelho_code')
+        ordering = ['dico_code']
+
+    def save(self, *args, **kwargs):
+        # Auto-generate DICO code from distrito + concelho
+        self.dico_code = f"{self.distrito.district_code}{self.concelho_code}"
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.name}, {self.distrito.name}"
+        return f"{self.name} ({self.dico_code})"
+
+class City(models.Model):
+    concelho = models.ForeignKey(
+        Concelho, 
+        on_delete=models.CASCADE,
+        related_name='cities',
+        to_field='dico_code'  # Use unique DICO code as reference
+    )
+    global_id = models.CharField(
+        max_length=7,
+        unique=True,
+        validators=[MinLengthValidator(7), MaxLengthValidator(7)],
+        verbose_name="IPMA Global ID"
+    )
+    name = models.CharField(max_length=100)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    ipma_area_code = models.CharField(
+        max_length=3,
+        validators=[MinLengthValidator(3), MaxLengthValidator(3)],
+        verbose_name="IPMA Area Code"
+    )
+
+    class Meta:
+        verbose_name_plural = "Cities"
+
+    def __str__(self):
+        return f"{self.name} ({self.global_id})"
+
+class WeatherStation(models.Model):
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='weather_stations')
+    name = models.CharField(max_length=100)
+    station_id = models.CharField(max_length=50, unique=True)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    def __str__(self):
+        return f"{self.name} Station ({self.city.name})"
 
 # Coordinates Model
 class Coordinates(models.Model):
