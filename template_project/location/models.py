@@ -1,6 +1,8 @@
-from django.db import models
+from django.contrib.gis.db import models
+from django.contrib.gis.geos import Point
 from accounts.models import Organization
 from django.core.validators import RegexValidator, MinLengthValidator, MaxLengthValidator
+from django.contrib.gis.db import models
 
 class Country(models.Model):
     code = models.CharField(
@@ -102,14 +104,27 @@ class City(models.Model):
         return f"{self.name} ({self.global_id})"
 
 class WeatherStation(models.Model):
-    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='weather_stations')
+    concelho = models.ForeignKey(
+        'location.Concelho',  # Reference the Concelho model
+        to_field='dico_code',
+        on_delete=models.CASCADE, 
+        related_name='weather_stations',  # This allows concelho.weather_stations.all()
+        verbose_name="Municipality"
+    )
     name = models.CharField(max_length=100)
     station_id = models.CharField(max_length=50, unique=True)
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+    location = models.PointField(null=True)
 
     def __str__(self):
-        return f"{self.name} Station ({self.city.name})"
+        return f"{self.name} Station ({self.concelho.name})"
+
+    def save(self, *args, **kwargs):
+        if not self.location and hasattr(self, 'latitude') and hasattr(self, 'longitude'):
+            self.location = Point(self.longitude, self.latitude)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['concelho', 'name']
 
 # Coordinates Model
 class Coordinates(models.Model):
