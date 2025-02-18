@@ -82,3 +82,36 @@ class StationObservation(models.Model):
     class Meta:
         ordering = ['-timestamp']
         unique_together = ['station', 'timestamp']
+
+
+class FireRisk(models.Model):
+    RISK_LEVELS = [
+        (1, 'Reduced Risk'),
+        (2, 'Moderate Risk'),
+        (3, 'High Risk'),
+        (4, 'Very High Risk'),
+        (5, 'Maximum Risk')
+    ]
+    
+    DAY_CHOICES = [(0, 'Today'), (1, 'Tomorrow')]
+    
+    concelho = models.ForeignKey(
+        'location.Concelho',
+        to_field='dico_code',
+        on_delete=models.CASCADE,
+        related_name='fire_risks'
+    )
+    forecast_day = models.IntegerField(choices=DAY_CHOICES)
+    forecast_date = models.DateField()
+    model_run_date = models.DateField()
+    update_date = models.DateTimeField()
+    risk_level = models.IntegerField(choices=RISK_LEVELS)
+    
+    class Meta:
+        ordering = ['forecast_day', 'concelho']
+        unique_together = ['concelho', 'forecast_day']
+        verbose_name = 'Fire Risk'
+        verbose_name_plural = 'Fire Risks'
+
+    def __str__(self):
+        return f"{self.concelho.name} - Day {self.forecast_day} - {self.get_risk_level_display()}"
