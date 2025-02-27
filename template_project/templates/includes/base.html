@@ -5,7 +5,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Dashboard - Bootstrap Admin Template</title>
+    <title>EcoSentinel</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="" name="keywords">
     <meta content="" name="description">
@@ -49,32 +49,86 @@
         <!-- Sidebar Start -->
         <div class="sidebar pe-4 pb-3">
             <nav class="navbar bg-light navbar-light">
-                <a href="{% url 'login' %}" class="navbar-brand mx-4 mb-3">
-                    <h3 class="text-primary"><i class="fa fa-hashtag me-2"></i>Template</h3>
+                <a href="#" class="navbar-brand mx-4 mb-3">
+                    <h3 class="text-primary"><i class="fa fa-cloud me-2"></i>EcoSentinel</h3>
                 </a>
                 <div class="navbar-nav w-100">
-                    <a href="{% url 'dashboard:main_dashboard' %}" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
+                    <a href="#" class="nav-item nav-link active"><i class="fa fa-tachometer-alt me-2"></i>Painel Principal</a>
+
+                    <!-- Alertas e Avisos -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-laptop me-2"></i>Elements</a>
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-exclamation-triangle me-2"></i>Alertas</a>
                         <div class="dropdown-menu bg-transparent border-0">
-                            <a href="button.html" class="dropdown-item">Buttons</a>
-                            <a href="typography.html" class="dropdown-item">Typography</a>
-                            <a href="element.html" class="dropdown-item">Other Elements</a>
+                            <a href="#" class="dropdown-item">Avisos Meteorológicos</a>
+                            <a href="#" class="dropdown-item">Alertas de Inundação</a>
+                            <a href="#" class="dropdown-item">Alertas de Seca</a>
                         </div>
                     </div>
-                    <a href="widget.html" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Widgets</a>
-                    <a href="form.html" class="nav-item nav-link"><i class="fa fa-keyboard me-2"></i>Forms</a>
-                    <a href="table.html" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Tables</a>
-                    <a href="chart.html" class="nav-item nav-link active"><i class="fa fa-chart-bar me-2"></i>Charts</a>
+
+                    <!-- Incêndios -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Pages</a>
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-fire me-2"></i>Incêndios</a>
                         <div class="dropdown-menu bg-transparent border-0">
-                            <a href="signin.html" class="dropdown-item">Sign In</a>
-                            <a href="signup.html" class="dropdown-item">Sign Up</a>
-                            <a href="404.html" class="dropdown-item">404 Error</a>
-                            <a href="blank.html" class="dropdown-item">Blank Page</a>
+                            <a href="#" class="dropdown-item">Mapa de Risco</a>
+                            <a href="#" class="dropdown-item">Ocorrências Ativas</a>
+                            <a href="#" class="dropdown-item">Histórico</a>
+                            <a href="#" class="dropdown-item">Planos de Prevenção</a>
                         </div>
                     </div>
+
+                    <!-- Inundações -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-water me-2"></i>Inundações</a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                            <a href="#" class="dropdown-item">Previsão de Inundações</a>
+                            <a href="#" class="dropdown-item">Níveis dos Rios</a>
+                            <a href="#" class="dropdown-item">Zonas de Risco</a>
+                            <a href="#" class="dropdown-item">Medidas de Proteção</a>
+                        </div>
+                    </div>
+
+                    <!-- Dados Climáticos -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-temperature-high me-2"></i>Dados Climáticos</a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                            <a href="#" class="dropdown-item">Temperatura</a>
+                            <a href="#" class="dropdown-item">Humidade</a>
+                            <a href="#" class="dropdown-item">Precipitação</a>
+                            <a href="#" class="dropdown-item">Vento</a>
+                            <a href="#" class="dropdown-item">Pressão Atmosférica</a>
+                            <a href="#" class="dropdown-item">Radiação Solar</a>
+                        </div>
+                    </div>
+
+                    <!-- Mapa -->
+                    <a href="#" class="nav-item nav-link"><i class="fa fa-map-marked-alt me-2"></i>Mapa Interativo</a>
+
+                    <!-- Estações -->
+                    <a href="#" class="nav-item nav-link"><i class="fa fa-broadcast-tower me-2"></i>Estações Meteorológicas</a>
+
+                    <!-- Estatísticas -->
+                    <a href="#" class="nav-item nav-link"><i class="fa fa-chart-bar me-2"></i>Estatísticas</a>
+
+                    <!-- Administração - Apenas visível para staff -->
+                    {% if user.is_staff %}
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-cog me-2"></i>Administração</a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                            <a href="#" class="dropdown-item">Gerir Utilizadores</a>
+                            <a href="#" class="dropdown-item">Configurações</a>
+                            <a href="#" class="dropdown-item">Logs do Sistema</a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Autenticação -->
+                    {% if user.is_authenticated %}
+                    <a href="#" class="nav-item nav-link"><i class="fa fa-user-cog me-2"></i>Perfil</a>
+                    <a href="#" class="nav-item nav-link"><i class="fa fa-sign-out-alt me-2"></i>Sair</a>
+                    {% else %}
+                    <a href="#" class="nav-item nav-link"><i class="fa fa-sign-in-alt me-2"></i>Entrar</a>
+                    <a href="#" class="nav-item nav-link"><i class="fa fa-user-plus me-2"></i>Registar</a>
+                    {% endif %}
                 </div>
             </nav>
         </div>
