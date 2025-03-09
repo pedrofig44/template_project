@@ -1,0 +1,188 @@
+<!-- dashboard/summary_partial.html -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light border-0 shadow">
+            <div class="card-header bg-transparent border-0">
+                <h4 class="mb-0">Climate Summary: {{ location_name }}</h4>
+                <p class="text-muted mb-0">{{ current_date|date:"F Y" }} Statistics</p>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Temperature Stats -->
+                    <div class="col-md-4 mb-4">
+                        <div class="border rounded p-3 h-100">
+                            <h5 class="mb-3">Temperature</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Average:</span>
+                                <span class="fw-bold">{{ climate_summary.avg_temp|default:"21.5" }}°C</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Maximum:</span>
+                                <span class="fw-bold">{{ climate_summary.max_temp|default:"28.3" }}°C</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Minimum:</span>
+                                <span class="fw-bold">{{ climate_summary.min_temp|default:"14.7" }}°C</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Normal Range:</span>
+                                <span class="fw-bold">{{ climate_summary.normal_temp_range|default:"15-26" }}°C</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Precipitation Stats -->
+                    <div class="col-md-4 mb-4">
+                        <div class="border rounded p-3 h-100">
+                            <h5 class="mb-3">Precipitation</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Monthly Total:</span>
+                                <span class="fw-bold">{{ climate_summary.monthly_precip|default:"45.2" }} mm</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Rainy Days:</span>
+                                <span class="fw-bold">{{ climate_summary.rainy_days|default:"7" }} days</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Max Daily:</span>
+                                <span class="fw-bold">{{ climate_summary.max_daily_precip|default:"12.5" }} mm</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Normal Monthly:</span>
+                                <span class="fw-bold">{{ climate_summary.normal_monthly_precip|default:"48" }} mm</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Wind Stats -->
+                    <div class="col-md-4 mb-4">
+                        <div class="border rounded p-3 h-100">
+                            <h5 class="mb-3">Wind</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Average Speed:</span>
+                                <span class="fw-bold">{{ climate_summary.avg_wind|default:"12.3" }} km/h</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Maximum Gust:</span>
+                                <span class="fw-bold">{{ climate_summary.max_wind|default:"32.7" }} km/h</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Predominant Direction:</span>
+                                <span class="fw-bold">{{ climate_summary.predom_wind_dir|default:"North" }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Calm Days:</span>
+                                <span class="fw-bold">{{ climate_summary.calm_days|default:"3" }} days</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <!-- Historical Comparison -->
+                    <div class="col-md-6 mb-3">
+                        <div class="border rounded p-3 h-100">
+                            <h5 class="mb-3">Comparison to Historical Average</h5>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span>Temperature:</span>
+                                <div class="d-flex align-items-center">
+                                    {% with temp_diff=climate_summary.temp_diff|default:1.2 %}
+                                    {% if temp_diff > 0 %}
+                                    <i class="fa-solid fa-arrow-up me-1 text-danger"></i>
+                                    <span class="text-danger">{{ temp_diff }} °C warmer</span>
+                                    {% elif temp_diff < 0 %}
+                                    <i class="fa-solid fa-arrow-down me-1 text-primary"></i>
+                                    <span class="text-primary">{{ temp_diff|floatformat:"1"|slice:"1:" }} °C cooler</span>
+                                    {% else %}
+                                    <i class="fa-solid fa-equals me-1 text-secondary"></i>
+                                    <span class="text-secondary">No change</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span>Precipitation:</span>
+                                <div class="d-flex align-items-center">
+                                    {% with precip_diff=climate_summary.precip_diff|default:-10.8 %}
+                                    {% if precip_diff > 0 %}
+                                    <i class="fa-solid fa-arrow-up me-1 text-primary"></i>
+                                    <span class="text-primary">{{ precip_diff }} mm more</span>
+                                    {% elif precip_diff < 0 %}
+                                    <i class="fa-solid fa-arrow-down me-1 text-warning"></i>
+                                    <span class="text-warning">{{ precip_diff|floatformat:"1"|slice:"1:" }} mm less</span>
+                                    {% else %}
+                                    <i class="fa-solid fa-equals me-1 text-secondary"></i>
+                                    <span class="text-secondary">No change</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Wind Speed:</span>
+                                <div class="d-flex align-items-center">
+                                    {% with wind_diff=climate_summary.wind_diff|default:0.5 %}
+                                    {% if wind_diff > 0 %}
+                                    <i class="fa-solid fa-arrow-up me-1 text-warning"></i>
+                                    <span class="text-warning">{{ wind_diff }} km/h faster</span>
+                                    {% elif wind_diff < 0 %}
+                                    <i class="fa-solid fa-arrow-down me-1 text-success"></i>
+                                    <span class="text-success">{{ wind_diff|floatformat:"1"|slice:"1:" }} km/h slower</span>
+                                    {% else %}
+                                    <i class="fa-solid fa-equals me-1 text-secondary"></i>
+                                    <span class="text-secondary">No change</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Climate Trend -->
+                    <div class="col-md-6 mb-3">
+                        <div class="border rounded p-3 h-100">
+                            <h5 class="mb-3">Climate Trends (Last 12 Months)</h5>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span>Temperature Trend:</span>
+                                <div class="d-flex align-items-center">
+                                    {% with temp_trend=climate_summary.temp_trend|default:"increasing" %}
+                                    {% if temp_trend == "increasing" %}
+                                    <div class="badge bg-danger me-2">↑</div>
+                                    <span>Warming trend of {{ climate_summary.temp_trend_value|default:"0.8" }}°C per decade</span>
+                                    {% elif temp_trend == "decreasing" %}
+                                    <div class="badge bg-primary me-2">↓</div>
+                                    <span>Cooling trend of {{ climate_summary.temp_trend_value|default:"0.3" }}°C per decade</span>
+                                    {% else %}
+                                    <div class="badge bg-secondary me-2">=</div>
+                                    <span>Stable temperatures</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span>Precipitation Trend:</span>
+                                <div class="d-flex align-items-center">
+                                    {% with precip_trend=climate_summary.precip_trend|default:"decreasing" %}
+                                    {% if precip_trend == "increasing" %}
+                                    <div class="badge bg-primary me-2">↑</div>
+                                    <span>Wetter trend of {{ climate_summary.precip_trend_value|default:"15" }}mm per decade</span>
+                                    {% elif precip_trend == "decreasing" %}
+                                    <div class="badge bg-warning me-2">↓</div>
+                                    <span>Drier trend of {{ climate_summary.precip_trend_value|default:"12" }}mm per decade</span>
+                                    {% else %}
+                                    <div class="badge bg-secondary me-2">=</div>
+                                    <span>Stable precipitation</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Extreme Events:</span>
+                                <span>{{ climate_summary.extreme_events|default:"Increasing frequency of heat waves" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

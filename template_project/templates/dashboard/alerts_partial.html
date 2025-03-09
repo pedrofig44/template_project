@@ -1,0 +1,118 @@
+<!-- dashboard/alerts_partial.html -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light border-0 shadow">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0">Weather Alerts & Warnings</h4>
+                    <p class="text-muted mb-0">Active warnings for {{ location_name }}</p>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownAlertType" data-bs-toggle="dropdown" aria-expanded="false">
+                        Filter by Type
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownAlertType">
+                        <li><a class="dropdown-item" href="#">All Warnings</a></li>
+                        <li><a class="dropdown-item" href="#">High Temperature</a></li>
+                        <li><a class="dropdown-item" href="#">Wind</a></li>
+                        <li><a class="dropdown-item" href="#">Rain/Flooding</a></li>
+                        <li><a class="dropdown-item" href="#">Thunderstorms</a></li>
+                        <li><a class="dropdown-item" href="#">Fog</a></li>
+                        <li><a class="dropdown-item" href="#">Snow/Ice</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if warnings %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Level</th>
+                                    <th>Type</th>
+                                    <th>Area</th>
+                                    <th>Valid Period</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for warning in warnings %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{{ warning.color }}">{{ warning.level|upper }}</span>
+                                    </td>
+                                    <td>{{ warning.type }}</td>
+                                    <td>{{ warning.area }}</td>
+                                    <td>
+                                        <small>{{ warning.start_time|date:"d M, H:i" }} to<br>{{ warning.end_time|date:"d M, H:i" }}</small>
+                                    </td>
+                                    <td>{{ warning.description|truncatechars:100 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center p-5">
+                        <i class="fa-solid fa-check-circle fa-4x mb-3 text-success"></i>
+                        <h4>No Active Warnings</h4>
+                        <p class="text-muted mb-0">There are currently no weather warnings for {{ location_name }}</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Historical Warnings Section -->
+            <div class="card-footer bg-transparent border-0 pt-0">
+                <hr>
+                <h5 class="mb-3">Recent Historical Warnings</h5>
+                {% if historical_warnings %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Level</th>
+                                    <th>Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for warning in historical_warnings %}
+                                <tr>
+                                    <td>{{ warning.date|date:"d M Y" }}</td>
+                                    <td>{{ warning.type }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ warning.color }}">{{ warning.level|upper }}</span>
+                                    </td>
+                                    <td>{{ warning.duration }} hours</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td>2025-01-15</td>
+                                    <td>High Winds</td>
+                                    <td><span class="badge bg-warning">YELLOW</span></td>
+                                    <td>24 hours</td>
+                                </tr>
+                                <tr>
+                                    <td>2025-01-02</td>
+                                    <td>Heavy Rain</td>
+                                    <td><span class="badge bg-danger">ORANGE</span></td>
+                                    <td>48 hours</td>
+                                </tr>
+                                <tr>
+                                    <td>2024-12-24</td>
+                                    <td>Fog</td>
+                                    <td><span class="badge bg-warning">YELLOW</span></td>
+                                    <td>18 hours</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No historical warning data available for this location.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

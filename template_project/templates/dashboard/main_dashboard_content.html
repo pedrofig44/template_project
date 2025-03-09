@@ -1,0 +1,467 @@
+<!-- dashboard/main_dashboard_content.html -->
+<!-- Current Weather Section -->
+<div class="row mb-4">
+    <!-- Left Column: Main Weather Card -->
+    <div class="col-lg-4 mb-4">
+        <div class="card bg-light text-dark h-100 border-0 shadow">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <h4 class="mb-0">Current Weather</h4>
+                    <span class="badge bg-primary">Updated: {{ weather_data.last_update|time:"H:i" }}</span>
+                </div>
+                <div class="text-center mb-4">
+                    <!-- Weather Icon -->
+                    <div class="weather-icon mb-3">
+                        {% if weather_data.weather_type == 'clear' %}
+                        <i class="fa-solid fa-sun fa-5x" style="color: #FFD43B;"></i>
+                        {% elif weather_data.weather_type == 'partly_cloudy' %}
+                        <i class="fa-solid fa-cloud-sun fa-5x" style="color: #78909C;"></i>
+                        {% elif weather_data.weather_type == 'cloudy' %}
+                        <i class="fa-solid fa-cloud fa-5x" style="color: #78909C;"></i>
+                        {% elif weather_data.weather_type == 'rain' %}
+                        <i class="fa-solid fa-cloud-rain fa-5x" style="color: #4FC3F7;"></i>
+                        {% elif weather_data.weather_type == 'thunderstorm' %}
+                        <i class="fa-solid fa-cloud-bolt fa-5x" style="color: #FFD600;"></i>
+                        {% else %}
+                        <i class="fa-solid fa-cloud fa-5x" style="color: #78909C;"></i>
+                        {% endif %}
+                    </div>
+                    <!-- Temperature -->
+                    <h1 class="display-3 fw-bold mb-0">{{ weather_data.temperature|default:"22" }}°C</h1>
+                    <h4 class="mt-2 mb-3">{{ weather_data.description|default:"Clear Sky" }}</h4>
+                    <div class="d-flex justify-content-around">
+                        <div>
+                            <i class="fa-solid fa-temperature-arrow-up me-1"></i>
+                            <span>{{ weather_data.temp_max|default:"26" }}°C</span>
+                        </div>
+                        <div>
+                            <i class="fa-solid fa-temperature-arrow-down me-1"></i>
+                            <span>{{ weather_data.temp_min|default:"18" }}°C</span>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="weather-details">
+                    <div class="row text-center g-3">
+                        <div class="col-4">
+                            <div class="p-2 border bg-white rounded shadow-sm">
+                                <i class="fa-solid fa-droplet mb-2" style="color: #4FC3F7;"></i>
+                                <p class="mb-0 small">Humidity</p>
+                                <h5 class="mb-0">{{ weather_data.humidity|default:"60" }}%</h5>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 border bg-white rounded shadow-sm">
+                                <i class="fa-solid fa-wind mb-2" style="color: #78909C;"></i>
+                                <p class="mb-0 small">Wind</p>
+                                <h5 class="mb-0">{{ weather_data.wind_speed|default:"10" }} km/h</h5>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 border bg-white rounded shadow-sm">
+                                <i class="fa-solid fa-umbrella mb-2" style="color: #42A5F5;"></i>
+                                <p class="mb-0 small">Precipitation</p>
+                                <h5 class="mb-0">{{ weather_data.precipitation_prob|default:"10" }}%</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Middle Column: Additional Weather Information -->
+    <div class="col-lg-4 mb-4">
+        <div class="row h-100">
+            <!-- Wind Direction Card -->
+            <div class="col-12 mb-4">
+                <div class="card bg-light text-dark h-100 border-0 shadow">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-4 text-center">
+                                <i class="fa-solid fa-compass fa-3x mb-2" style="color: #546E7A;"></i>
+                            </div>
+                            <div class="col-8">
+                                <h5 class="card-title">Wind Direction</h5>
+                                <h3 class="mb-0">{{ weather_data.wind_direction|default:"North" }}</h3>
+                                <p class="text-muted small mb-0">Speed: {{ weather_data.wind_speed|default:"10" }} km/h</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Atmospheric Pressure Card -->
+            <div class="col-12 mb-4">
+                <div class="card bg-light text-dark h-100 border-0 shadow">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-4 text-center">
+                                <i class="fa-solid fa-arrows-down-to-line fa-3x mb-2" style="color: #546E7A;"></i>
+                            </div>
+                            <div class="col-8">
+                                <h5 class="card-title">Atmospheric Pressure</h5>
+                                <h3 class="mb-0">{{ weather_data.pressure|default:"1015" }} hPa</h3>
+                                <p class="text-muted small mb-0">
+                                    {% if weather_data.pressure > 1013 %}Rising{% else %}Falling{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Fire Weather Index Card -->
+            <div class="col-12">
+                <div class="card bg-light text-dark h-100 border-0 shadow">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-4 text-center">
+                                <i class="fa-solid fa-fire fa-3x mb-2" 
+                                   style="color: {% if fire_risk.level <= 2 %}#4CAF50{% elif fire_risk.level <= 3 %}#FF9800{% else %}#F44336{% endif %};">
+                                </i>
+                            </div>
+                            <div class="col-8">
+                                <h5 class="card-title">Fire Risk Index</h5>
+                                <h3 class="mb-0">{{ fire_risk.description|default:"Reduced Risk" }}</h3>
+                                <p class="text-muted small mb-0">Level {{ fire_risk.level|default:"1" }}/5</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Column: Weather Warnings -->
+    <div class="col-lg-4 mb-4">
+        <div class="card bg-light text-dark h-100 border-0 shadow">
+            <div class="card-header bg-transparent border-0">
+                <h4 class="mb-0">Weather Warnings</h4>
+            </div>
+            <div class="card-body p-0">
+                {% if warnings %}
+                    <div class="list-group list-group-flush">
+                        {% for warning in warnings|slice:":3" %}
+                        <div class="list-group-item border-0 py-3">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <h5 class="mb-1">
+                                    <span class="badge bg-{{ warning.color }}">{{ warning.level|upper }}</span>
+                                    {{ warning.type }}
+                                </h5>
+                                <small>Until {{ warning.end_time|date:"d M, H:i" }}</small>
+                            </div>
+                            <p class="mb-1">{{ warning.description }}</p>
+                            <small class="text-muted">{{ warning.area }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center p-4">
+                        <i class="fa-solid fa-check-circle fa-3x mb-3 text-success"></i>
+                        <h5>No Active Warnings</h5>
+                        <p class="text-muted mb-0">All clear for {{ location_name|default:"Lisboa" }}</p>
+                    </div>
+                {% endif %}
+            </div>
+            {% if warnings|length > 3 %}
+            <div class="card-footer bg-transparent border-0 text-center">
+                <button class="btn btn-sm btn-outline-primary"
+                       hx-get="{% url 'dashboard:main_dashboard' %}?view=alerts&location={{ current_location_id }}"
+                       hx-target="#dashboard-content"
+                       hx-swap="innerHTML">
+                    View All {{ warnings|length }} Warnings
+                </button>
+            </div>
+            {% elif warnings %}
+            <div class="card-footer bg-transparent border-0 text-center">
+                <button class="btn btn-sm btn-outline-primary"
+                       hx-get="{% url 'dashboard:main_dashboard' %}?view=alerts&location={{ current_location_id }}"
+                       hx-target="#dashboard-content"
+                       hx-swap="innerHTML">
+                    View Details
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Forecast Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="mb-3">5-Day Forecast</h3>
+        <div class="row">
+            {% for forecast in forecast_data %}
+            <div class="col-md-6 col-lg-4 col-xl-2-4 mb-4">
+                <div class="card bg-light text-dark h-100 border-0 shadow">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">{{ forecast.date|date:"D, d M" }}</h5>
+                        <!-- Weather Icon -->
+                        <div class="my-3">
+                            {% if forecast.weather_type == 'clear' %}
+                            <i class="fa-solid fa-sun fa-3x" style="color: #FFD43B;"></i>
+                            {% elif forecast.weather_type == 'partly_cloudy' %}
+                            <i class="fa-solid fa-cloud-sun fa-3x" style="color: #78909C;"></i>
+                            {% elif forecast.weather_type == 'cloudy' %}
+                            <i class="fa-solid fa-cloud fa-3x" style="color: #78909C;"></i>
+                            {% elif forecast.weather_type == 'rain' %}
+                            <i class="fa-solid fa-cloud-rain fa-3x" style="color: #4FC3F7;"></i>
+                            {% elif forecast.weather_type == 'thunderstorm' %}
+                            <i class="fa-solid fa-cloud-bolt fa-3x" style="color: #FFD600;"></i>
+                            {% else %}
+                            <i class="fa-solid fa-cloud fa-3x" style="color: #78909C;"></i>
+                            {% endif %}
+                        </div>
+                        <h6 class="mb-3">{{ forecast.description }}</h6>
+                        <div class="d-flex justify-content-center">
+                            <div class="me-3">
+                                <span class="fs-4 fw-bold">{{ forecast.temp_max }}°</span>
+                            </div>
+                            <div>
+                                <span class="fs-4 text-muted">{{ forecast.temp_min }}°</span>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between small">
+                            <div>
+                                <i class="fa-solid fa-droplet me-1" style="color: #4FC3F7;"></i>
+                                {{ forecast.precipitation_prob }}%
+                            </div>
+                            <div>
+                                <i class="fa-solid fa-wind me-1" style="color: #78909C;"></i>
+                                {{ forecast.wind_speed }} km/h
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <!-- Placeholder forecasts if no data is available -->
+            {% for i in "12345" %}
+            <div class="col-md-6 col-lg-4 col-xl-2-4 mb-4">
+                <div class="card bg-light text-dark h-100 border-0 shadow">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">
+                            {% now "D, d M" as today %}
+                            {{ today }}
+                        </h5>
+                        <div class="my-3">
+                            <i class="fa-solid fa-sun fa-3x" style="color: #FFD43B;"></i>
+                        </div>
+                        <h6 class="mb-3">Sunny</h6>
+                        <div class="d-flex justify-content-center">
+                            <div class="me-3">
+                                <span class="fs-4 fw-bold">25°</span>
+                            </div>
+                            <div>
+                                <span class="fs-4 text-muted">18°</span>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between small">
+                            <div>
+                                <i class="fa-solid fa-droplet me-1" style="color: #4FC3F7;"></i>
+                                10%
+                            </div>
+                            <div>
+                                <i class="fa-solid fa-wind me-1" style="color: #78909C;"></i>
+                                12 km/h
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light border-0 shadow">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Weather Trends</h4>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" 
+                            hx-get="{% url 'dashboard:main_dashboard' %}?chart=temp&period=7days&location={{ current_location_id }}"
+                            hx-target="#charts-container"
+                            hx-swap="innerHTML">
+                        Temperature
+                    </button>
+                    <button class="btn btn-outline-primary"
+                            hx-get="{% url 'dashboard:main_dashboard' %}?chart=humid&period=7days&location={{ current_location_id }}"
+                            hx-target="#charts-container"
+                            hx-swap="innerHTML">
+                        Humidity
+                    </button>
+                    <button class="btn btn-outline-primary"
+                            hx-get="{% url 'dashboard:main_dashboard' %}?chart=precip&period=7days&location={{ current_location_id }}"
+                            hx-target="#charts-container"
+                            hx-swap="innerHTML">
+                        Precipitation
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="charts-container" style="height: 300px;">
+                    {% if temperature_chart %}
+                        <div id="temperature-chart"></div>
+                    {% else %}
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <div class="text-center">
+                                <i class="fa fa-chart-line fa-3x mb-3 text-muted"></i>
+                                <p>Select a chart to display weather trends</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Information Section -->
+<div class="row">
+    <!-- Air Quality Card -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card bg-light text-dark h-100 border-0 shadow">
+            <div class="card-body">
+                <h4 class="card-title">Air Quality</h4>
+                <div class="text-center my-4">
+                    <div class="position-relative d-inline-block">
+                        <div class="progress rounded-pill" style="height: 8px; width: 200px;">
+                            <div class="progress-bar 
+                                {% if air_quality.index <= 2 %}bg-success
+                                {% elif air_quality.index <= 3 %}bg-warning
+                                {% else %}bg-danger{% endif %}" 
+                                role="progressbar" style="width: {% widthratio air_quality.index|default:2 1 20 %}%"></div>
+                        </div>
+                        <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-primary">
+                            {{ air_quality.index|default:"2" }}/5
+                        </span>
+                    </div>
+                </div>
+                <h3 class="text-center mb-3">{{ air_quality.description|default:"Good" }}</h3>
+                <p class="text-muted text-center">
+                    {{ air_quality.message|default:"Air quality is satisfactory, and air pollution poses little or no risk." }}
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- UV Index Card -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card bg-light text-dark h-100 border-0 shadow">
+            <div class="card-body">
+                <h4 class="card-title">UV Index</h4>
+                <div class="text-center my-4">
+                    <div class="position-relative d-inline-block">
+                        <div class="progress rounded-pill" style="height: 8px; width: 200px;">
+                            <div class="progress-bar 
+                                {% if uv_index.value <= 2 %}bg-success
+                                {% elif uv_index.value <= 5 %}bg-warning
+                                {% elif uv_index.value <= 7 %}bg-orange
+                                {% else %}bg-danger{% endif %}" 
+                                role="progressbar" style="width: {% widthratio uv_index.value|default:5 1 10 %}%"></div>
+                        </div>
+                        <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-primary">
+                            {{ uv_index.value|default:"5" }}/10
+                        </span>
+                    </div>
+                </div>
+                <h3 class="text-center mb-3">{{ uv_index.description|default:"Moderate" }}</h3>
+                <p class="text-muted text-center">
+                    {{ uv_index.recommendation|default:"Take precautions - cover up and wear sunscreen" }}
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pollen Count Card -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card bg-light text-dark h-100 border-0 shadow">
+            <div class="card-body">
+                <h4 class="card-title">Pollen Count</h4>
+                <div class="text-center my-4">
+                    <div class="position-relative d-inline-block">
+                        <div class="progress rounded-pill" style="height: 8px; width: 200px;">
+                            <div class="progress-bar 
+                                {% if pollen.level <= 1 %}bg-success
+                                {% elif pollen.level <= 2 %}bg-warning
+                                {% else %}bg-danger{% endif %}" 
+                                role="progressbar" style="width: {% widthratio pollen.level|default:2 1 25 %}%"></div>
+                        </div>
+                        <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-primary">
+                            {{ pollen.level|default:"2" }}/4
+                        </span>
+                    </div>
+                </div>
+                <h3 class="text-center mb-3">{{ pollen.description|default:"Medium" }}</h3>
+                <p class="text-muted text-center mb-0">
+                    {{ pollen.message|default:"Moderate pollen levels may cause symptoms for people with pollen allergies." }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Only include chart rendering scripts if we have chart data -->
+{% if temperature_chart or humidity_chart or precipitation_chart %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if temperature_chart %}
+        const temperatureChart = JSON.parse('{{ temperature_chart|escapejs }}');
+        Plotly.newPlot('temperature-chart', temperatureChart.data, temperatureChart.layout);
+        {% endif %}
+        
+        {% if humidity_chart %}
+        const humidityChart = JSON.parse('{{ humidity_chart|escapejs }}');
+        Plotly.newPlot('humidity-chart', humidityChart.data, humidityChart.layout);
+        {% endif %}
+        
+        {% if precipitation_chart %}
+        const precipitationChart = JSON.parse('{{ precipitation_chart|escapejs }}');
+        Plotly.newPlot('precipitation-chart', precipitationChart.data, precipitationChart.layout);
+        {% endif %}
+        
+        // Apply night mode styling if active
+        if (document.body.classList.contains('night-mode')) {
+            const bgColor = '#191C24';
+            const fontColor = '#ffffff';
+            
+            {% if temperature_chart %}
+            Plotly.relayout('temperature-chart', {
+                'paper_bgcolor': bgColor,
+                'plot_bgcolor': bgColor,
+                'font.color': fontColor,
+                'xaxis.color': fontColor,
+                'yaxis.color': fontColor
+            });
+            {% endif %}
+            
+            {% if humidity_chart %}
+            Plotly.relayout('humidity-chart', {
+                'paper_bgcolor': bgColor,
+                'plot_bgcolor': bgColor,
+                'font.color': fontColor,
+                'xaxis.color': fontColor,
+                'yaxis.color': fontColor
+            });
+            {% endif %}
+            
+            {% if precipitation_chart %}
+            Plotly.relayout('precipitation-chart', {
+                'paper_bgcolor': bgColor,
+                'plot_bgcolor': bgColor,
+                'font.color': fontColor,
+                'xaxis.color': fontColor,
+                'yaxis.color': fontColor
+            });
+            {% endif %}
+        }
+    });
+</script>
+{% endif %}

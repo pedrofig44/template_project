@@ -1,123 +1,363 @@
 {% extends 'includes/base.html' %}
+{% load static %}
 
 {% block content %}
+<!-- Dashboard Header -->
 <div class="container-fluid pt-4 px-4">
-    <div class="row align-items-center mb-4">
+    <div class="row mb-4">
         <div class="col-md-6">
-            <h3>Data for Sensor: {{ sensor_name }}</h3>
+            <h2 class="text-start">
+                Weather Dashboard - <span id="location-name">{{ location_name|default:"Lisboa" }}</span>
+                <span class="fs-6 text-muted" id="current-date">{{ current_date|date:"F d, Y" }}</span>
+            </h2>
         </div>
         <div class="col-md-6 text-end">
-            <form method="get" class="d-inline-block">
-                <label for="time_range" class="me-2">Select Time Range:</label>
-                <select
-                    id="time_range"
-                    name="time_range"
-                    class="form-select d-inline-block w-auto"
-                    hx-get="{% url 'dashboard:main_dashboard' %}"
-                    hx-target="#charts-container"
-                    hx-swap="innerHTML"
-                >
-                    <option value="all" {% if time_range == 'all' %}selected{% endif %}>All Time</option>
-                    <option value="last_week" {% if time_range == 'last_week' %}selected{% endif %}>Last Week</option>
-                    <option value="last_month" {% if time_range == 'last_month' %}selected{% endif %}>Last Month</option>
-                    <option value="last_year" {% if time_range == 'last_year' %}selected{% endif %}>Last Year</option>
-                </select>
-            </form>
+            <div class="dropdown d-inline-block">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="locationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Change Location
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="locationDropdown">
+                    {% for city in available_cities %}
+                    <li>
+                        <a class="dropdown-item {% if city.name == location_name %}active{% endif %}" 
+                           href="{% url 'dashboard:main_dashboard' %}?location={{ city.global_id }}"
+                           hx-get="{% url 'dashboard:main_dashboard' %}?location={{ city.global_id }}"
+                           hx-target="#dashboard-content"
+                           hx-swap="innerHTML"
+                           hx-trigger="click"
+                           hx-indicator="#spinner">
+                            {{ city.name }}
+                        </a>
+                    </li>
+                    {% empty %}
+                    <li><a class="dropdown-item" href="#">Lisboa</a></li>
+                    <li><a class="dropdown-item" href="#">Porto</a></li>
+                    <li><a class="dropdown-item" href="#">Coimbra</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="btn-group ms-2">
+                <button class="btn btn-outline-secondary" 
+                        hx-get="{% url 'dashboard:main_dashboard' %}?view=summary&location={{ current_location_id }}"
+                        hx-target="#dashboard-content"
+                        hx-swap="innerHTML">
+                    Summary
+                </button>
+                <button class="btn btn-outline-secondary"
+                        hx-get="{% url 'dashboard:main_dashboard' %}?view=charts&location={{ current_location_id }}"
+                        hx-target="#dashboard-content"
+                        hx-swap="innerHTML">
+                    Charts
+                </button>
+                <button class="btn btn-outline-secondary"
+                        hx-get="{% url 'dashboard:main_dashboard' %}?view=alerts&location={{ current_location_id }}"
+                        hx-target="#dashboard-content"
+                        hx-swap="innerHTML">
+                    Alerts
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Charts Container -->
-    <div id="charts-container">
-        <!-- Existing Chart Containers -->
-        <div class="row g-4">
-            <div class="col-sm-12 col-xl-6">
-                <div class="bg-light rounded h-100 p-4">
-                    <div id="temperature-chart"></div>
-                </div>
-            </div>
-            <div class="col-sm-12 col-xl-6">
-                <div class="bg-light rounded h-100 p-4">
-                    <div id="humidity-chart"></div>
-                </div>
-            </div>
-            <div class="col-sm-12 col-xl-6">
-                <div class="bg-light rounded h-100 p-4">
-                    <div id="precipitation-chart"></div>
+    <!-- Main Dashboard Content -->
+    <div id="dashboard-content">
+        {% if view_type == 'summary' %}
+            {% include 'dashboard/summary_partial.html' %}
+        {% elif view_type == 'alerts' %}
+            {% include 'dashboard/alerts_partial.html' %}
+        {% else %}
+            {% include 'dashboard/main_dashboard_content.html' %}
+        {% endif %}
+    </div>
+</div>
+
+{% if temperature_chart or humidity_chart or precipitation_chart %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% endif %}
+
+<!-- Custom styling for layout components -->
+<style>
+    /* Custom column for 5 day forecast */
+    .col-xl-2-4 {
+        width: 20%;
+    }
+    
+    @media (max-width: 1199.98px) {
+        .col-xl-2-4 {
+            width: 50%;
+        }
+    }
+    
+    @media (max-width: 767.98px) {
+        .col-xl-2-4 {
+            width: 100%;
+        }
+    }
+    
+    /* Night mode specific styles */
+    .night-mode .card {
+        background-color: #222 !important;
+        color: #fff !important;
+    }
+    
+    .night-mode .bg-light {
+        background-color: #222 !important;
+    }
+    
+    .night-mode .bg-white {
+        background-color: #2C2C2C !important;
+    }
+    
+    .night-mode .border {
+        border-color: #444 !important;
+    }
+    
+    .night-mode .text-dark {
+        color: #fff !important;
+    }
+    
+    .night-mode .text-muted {
+        color: #adb5bd !important;
+    }
+    
+    /* Badge colors for warnings */
+    .badge.bg-yellow {
+        background-color: #FFC107;
+        color: #212529;
+    }
+    
+    .badge.bg-orange {
+        background-color: #FF9800;
+        color: #fff;
+    }
+    
+    .badge.bg-red {
+        background-color: #F44336;
+        color: #fff;
+    }
+    
+    /* Animation for weather icons */
+    @keyframes float {
+        0% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+        100% {
+            transform: translateY(0px);
+        }
+    }
+    
+    .weather-icon {
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    /* Loading indicator for HTMX requests */
+    .htmx-indicator {
+        opacity: 0;
+        transition: opacity 500ms ease-in;
+    }
+    .htmx-request .htmx-indicator {
+        opacity: 1;
+    }
+    .htmx-request.htmx-indicator {
+        opacity: 1;
+    }
+</style>
+
+<!-- HTMX support for charts and page transitions -->
+<script>
+
+    
+
+    document.addEventListener('htmx:beforeSwap', function(event) {
+            // If the target is the charts container, purge any existing Plotly charts
+            if (event.detail.target.id === 'charts-container') {
+                const charts = event.detail.target.querySelectorAll('[id$="-chart"]');
+                charts.forEach(function(chart) {
+                    if (chart._Plotly) {
+                        Plotly.purge(chart);
+                    }
+                });
+            }
+        });
+
+    document.addEventListener('htmx:afterSwap', function(event) {
+        // Re-initialize Plotly charts after HTMX swaps content
+        if (typeof Plotly !== 'undefined') {
+            const charts = document.querySelectorAll('[id$="-chart"]');
+            charts.forEach(function(chart) {
+                if (chart.hasAttribute('data-plotly')) {
+                    Plotly.react(chart.id, JSON.parse(chart.getAttribute('data-plotly')));
+                }
+            });
+        }
+        
+        // Apply night mode to any new content
+        if (document.body.classList.contains('night-mode')) {
+            applyNightMode();
+        }
+    });
+    
+    // Apply night mode styling to charts
+    function applyNightMode() {
+        if (typeof Plotly !== 'undefined') {
+            const charts = document.querySelectorAll('[id$="-chart"]');
+            const bgColor = '#191C24';
+            const fontColor = '#ffffff';
+            
+            charts.forEach(function(chart) {
+                if (chart.innerHTML.trim() !== '') {
+                    Plotly.relayout(chart.id, {
+                        'paper_bgcolor': bgColor,
+                        'plot_bgcolor': bgColor,
+                        'font.color': fontColor,
+                        'xaxis.color': fontColor,
+                        'yaxis.color': fontColor
+                    });
+                }
+            });
+        }
+    }
+    
+    // Listen for the custom night mode toggle event
+    document.addEventListener('nightModeToggled', function() {
+        applyNightMode();
+    });
+</script>
+{% endblock %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card bg-light text-dark h-100 border-0 shadow">
+                    <div class="card-body">
+                        <h4 class="card-title">Pollen Count</h4>
+                        <div class="text-center my-4">
+                            <div class="position-relative d-inline-block">
+                                <div class="progress rounded-pill" style="height: 8px; width: 200px;">
+                                    <div class="progress-bar 
+                                        {% if pollen.level <= 1 %}bg-success
+                                        {% elif pollen.level <= 2 %}bg-warning
+                                        {% else %}bg-danger{% endif %}" 
+                                        role="progressbar" style="width: {% widthratio pollen.level|default:2 1 25 %}%"></div>
+                                </div>
+                                <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-primary">
+                                    {{ pollen.level|default:"2" }}/4
+                                </span>
+                            </div>
+                        </div>
+                        <h3 class="text-center mb-3">{{ pollen.description|default:"Medium" }}</h3>
+                        <p class="text-muted text-center mb-0">
+                            {{ pollen.message|default:"Moderate pollen levels may cause symptoms for people with pollen allergies." }}
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Chart Rendering Script -->
+<!-- Chart Rendering Script (only executes when there's chart data) -->
+{% if temperature_chart or humidity_chart or precipitation_chart %}
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
-    // Function to render charts
-    function renderCharts() {
-        (function() {
-            // Render the temperature chart
-            const temperatureChart = JSON.parse('{{ temperature_chart|escapejs }}');
-            Plotly.newPlot('temperature-chart', temperatureChart.data, temperatureChart.layout);
-
-            // Render the humidity chart
-            const humidityChart = JSON.parse('{{ humidity_chart|escapejs }}');
-            Plotly.newPlot('humidity-chart', humidityChart.data, humidityChart.layout);
-
-            // Render the precipitation chart
-            const precipitationChart = JSON.parse('{{ precipitation_chart|escapejs }}');
-            Plotly.newPlot('precipitation-chart', precipitationChart.data, precipitationChart.layout);
-        })();
-    }
-
-    // Function to update Plotly charts
-    function updateCharts() {
-        const isNightMode = document.body.classList.contains('night-mode');
-        const bgColor = isNightMode ? '#191C24' : '#f8f9fa';
-        const fontColor = isNightMode ? '#ffffff' : '#000000';
-
-        // Update each chart's layout
-        Plotly.relayout('temperature-chart', {
-            'paper_bgcolor': bgColor,
-            'plot_bgcolor': bgColor,
-            'font.color': fontColor,
-            'xaxis.color': fontColor,
-            'yaxis.color': fontColor
-        });
-        Plotly.relayout('humidity-chart', {
-            'paper_bgcolor': bgColor,
-            'plot_bgcolor': bgColor,
-            'font.color': fontColor,
-            'xaxis.color': fontColor,
-            'yaxis.color': fontColor
-        });
-        Plotly.relayout('precipitation-chart', {
-            'paper_bgcolor': bgColor,
-            'plot_bgcolor': bgColor,
-            'font.color': fontColor,
-            'xaxis.color': fontColor,
-            'yaxis.color': fontColor
-        });
-    }
-
-    // Initial chart rendering
     document.addEventListener('DOMContentLoaded', function() {
-        renderCharts();
-        updateCharts();
-    });
-
-    // Listen for the custom night mode toggle event
-    document.addEventListener('nightModeToggled', function() {
-        updateCharts();
-    });
-
-    // Re-render charts after HTMX content swap
-    document.body.addEventListener('htmx:afterSwap', function(event) {
-        if (event.detail.target.id === 'charts-container') {
-            renderCharts();
-            updateCharts();
-        }
+        {% if temperature_chart %}
+        const temperatureChart = JSON.parse('{{ temperature_chart|escapejs }}');
+        Plotly.newPlot('temperature-chart', temperatureChart.data, temperatureChart.layout);
+        {% endif %}
+        
+        {% if humidity_chart %}
+        const humidityChart = JSON.parse('{{ humidity_chart|escapejs }}');
+        Plotly.newPlot('humidity-chart', humidityChart.data, humidityChart.layout);
+        {% endif %}
+        
+        {% if precipitation_chart %}
+        const precipitationChart = JSON.parse('{{ precipitation_chart|escapejs }}');
+        Plotly.newPlot('precipitation-chart', precipitationChart.data, precipitationChart.layout);
+        {% endif %}
+        
+        // Update charts when night mode changes
+        document.addEventListener('nightModeToggled', function() {
+            const isNightMode = document.body.classList.contains('night-mode');
+            const bgColor = isNightMode ? '#191C24' : '#f8f9fa';
+            const fontColor = isNightMode ? '#ffffff' : '#000000';
+            
+            {% if temperature_chart %}
+            Plotly.relayout('temperature-chart', {
+                'paper_bgcolor': bgColor,
+                'plot_bgcolor': bgColor,
+                'font.color': fontColor,
+                'xaxis.color': fontColor,
+                'yaxis.color': fontColor
+            });
+            {% endif %}
+            
+            {% if humidity_chart %}
+            Plotly.relayout('humidity-chart', {
+                'paper_bgcolor': bgColor,
+                'plot_bgcolor': bgColor,
+                'font.color': fontColor,
+                'xaxis.color': fontColor,
+                'yaxis.color': fontColor
+            });
+            {% endif %}
+            
+            {% if precipitation_chart %}
+            Plotly.relayout('precipitation-chart', {
+                'paper_bgcolor': bgColor,
+                'plot_bgcolor': bgColor,
+                'font.color': fontColor,
+                'xaxis.color': fontColor,
+                'yaxis.color': fontColor
+            });
+            {% endif %}
+        });
     });
 </script>
+{% endif %}
 
-
-{% endblock %}
+<!-- Additional CSS for the dashboard -->
+<style>
+    /* Custom column for 5 day forecast */
+    .col-xl-2-4 {
+        width: 20%;
+    }
+    
+    @media (max-width: 1199.98px) {
+        .col-xl-2-4 {
+            width: 50%;
+        }
+    }
+    
+    @media (max-width: 767.98px) {
+        .col-xl-2-4 {
+            width: 100%;
+        }
+    }
+    
+    /* Night mode specific styles */
+    .night-mode .card {
+        background-color: #222 !important;
+        color: #fff !important;
+    }
+    
+    .night-mode .bg-light {
+        background-color: #222 !important;
+    }
+    
+    .night-mode .bg-white {
+        background-color: #2C2C2C !important;
+    }
+    
+    .night-mode .border {
+        border-color: #444 !important;
+    }
+    
+    .night-mode .text-dark {
+        color: #fff !important;
+    }
+    
+    .night-mode .text-muted {
+        color: #adb5bd !important;
+    }
+</style>
