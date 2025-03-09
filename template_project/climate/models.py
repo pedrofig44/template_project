@@ -58,8 +58,34 @@ class WeatherWarning(models.Model):
     end_time = models.DateTimeField()
     description = models.TextField(blank=True)
     
+    # New field to create a relationship with the City model
+    city = models.ForeignKey(
+        City, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='weather_warnings',
+        limit_choices_to={'ipma_area_code__isnull': False}
+    )
+    
     class Meta:
         ordering = ['-start_time']
+
+    def __str__(self):
+        return f"{self.get_awareness_level_display()} - {self.awareness_type} ({self.area_code})"
+    
+    def save(self, *args, **kwargs):
+        # If city is not set but area_code is, try to find a matching city
+        if not self.city and self.area_code:
+            try:
+                matching_city = City.objects.filter(ipma_area_code=self.area_code).first()
+                if matching_city:
+                    self.city = matching_city
+            except Exception:
+                # If any error occurs, continue without setting the city
+                pass
+        
+        super().save(*args, **kwargs)
 
 class StationObservation(models.Model):
     WIND_DIRECTIONS = [

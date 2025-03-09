@@ -2,34 +2,32 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import timedelta, datetime
-import polars as pl
-import json
 
 from location.models import City, WeatherStation, Concelho
 from climate.models import DailyForecast, StationObservation, WeatherWarning, FireRisk
-from .utils import generate_line_chart
 
 def main_dashboard_view(request):
     """
-    Main dashboard view displaying current weather, forecasts, warnings, and charts
+    Main dashboard view displaying current weather, forecasts, warnings
     """
     # Get location from request parameters or default to a fallback city
     location_id = request.GET.get('location')
     view_type = request.GET.get('view', 'summary')
-    chart_type = request.GET.get('chart')
-    period = request.GET.get('period', '7days')
-    
+
     # Default to fallback location if no location specified
     try:
         if location_id:
             current_city = get_object_or_404(City, global_id=location_id)
+            location_name = current_city.name  # Ensure location_name is set from the current_city
         else:
             # Default to Lisboa or first city in database
             current_city = City.objects.filter(name__iexact='Lisboa').first() or City.objects.first()
             location_id = current_city.global_id if current_city else None
+            location_name = current_city.name if current_city else 'Lisboa'  # Set default location_name
     except Exception as e:
         # If there's any error, use a default name for display purposes
         current_city = None
+        location_name = 'Lisboa'  # Ensure location_name is still set even if there's an error
     
     # Get available cities for the dropdown menu
     available_cities = City.objects.all().order_by('name')[:20]  # Limit to 20 cities
@@ -189,107 +187,51 @@ def main_dashboard_view(request):
     # 4. Weather Warnings
     warnings = []
     try:
-        # Get active warnings
-        current_time = timezone.now()
-        active_warnings = WeatherWarning.objects.filter(
-            end_time__gt=current_time
-        ).order_by('-awareness_level', 'end_time')
-        
-        # Define warning level colors
-        level_colors = {
-            'yellow': 'warning',
-            'orange': 'danger',
-            'red': 'danger',
-            'green': 'success'
-        }
-        
-        for warning in active_warnings:
-            warnings.append({
-                'type': warning.awareness_type,
-                'level': warning.awareness_level,
-                'color': level_colors.get(warning.awareness_level, 'warning'),
-                'description': warning.description,
-                'area': warning.area_code,
-                'start_time': warning.start_time,
-                'end_time': warning.end_time
-            })
+        if current_city:
+            # Get active warnings for this city, excluding green level warnings
+            current_time = timezone.now()
+            
+            # First try to get warnings directly linked to the city
+            active_warnings = WeatherWarning.objects.filter(
+                city=current_city,
+                end_time__gt=current_time
+            ).exclude(
+                awareness_level='green'  # Exclude green level warnings
+            ).order_by('-awareness_level', 'end_time')
+            
+            # If no warnings found directly linked to the city, fallback to area_code matching
+            if not active_warnings.exists():
+                active_warnings = WeatherWarning.objects.filter(
+                    area_code=current_city.ipma_area_code,
+                    end_time__gt=current_time
+                ).exclude(
+                    awareness_level='green'  # Exclude green level warnings
+                ).order_by('-awareness_level', 'end_time')
+            
+            # Define warning level colors
+            level_colors = {
+                'yellow': 'warning',
+                'orange': 'danger',
+                'red': 'danger'
+            }
+            
+            for warning in active_warnings:
+                warnings.append({
+                    'type': warning.awareness_type,
+                    'level': warning.awareness_level,
+                    'color': level_colors.get(warning.awareness_level, 'warning'),
+                    'description': warning.description,
+                    'area': warning.area_code,
+                    'start_time': warning.start_time,
+                    'end_time': warning.end_time
+                })
     except Exception as e:
         # If there's an error, we'll keep the empty warnings list
         pass
     
-    # 5. Generate Charts
-    temperature_chart = None
-    humidity_chart = None
-    precipitation_chart = None
-    
-    try:
-        if current_city and (view_type == 'charts' or chart_type):
-            # Get weather station for this city's concelho
-            station = None
-            if current_city and current_city.concelho:
-                station = WeatherStation.objects.filter(
-                    concelho__dico_code=current_city.concelho.dico_code
-                ).first()
-            
-            if station:
-                # Determine time range for data
-                if period == '24hours':
-                    start_time = current_date - timedelta(days=1)
-                elif period == '7days':
-                    start_time = current_date - timedelta(days=7)
-                elif period == '30days':
-                    start_time = current_date - timedelta(days=30)
-                else:
-                    start_time = current_date - timedelta(days=7)  # Default
-                
-                # Query observation data
-                observations = StationObservation.objects.filter(
-                    station=station,
-                    timestamp__gte=start_time
-                ).order_by('timestamp')
-                
-                # Convert to list and then to Polars DataFrame
-                if observations:
-                    obs_data = list(observations.values('timestamp', 'temperature', 'humidity', 'precipitation'))
-                    df = pl.DataFrame(obs_data)
-                    
-                    # Determine background color based on cookie (or default)
-                    bg_color = '#191C24' if request.COOKIES.get('nightMode') == 'enabled' else '#f8f9fa'
-                    
-                    # Generate the appropriate chart(s)
-                    if chart_type == 'temp' or view_type == 'charts' or not chart_type:
-                        temperature_chart = generate_line_chart(
-                            df.select(['timestamp', 'temperature']),
-                            title="Temperature History",
-                            x_axis="Date",
-                            y_axis="Temperature (°C)",
-                            bg_color=bg_color
-                        )
-                    
-                    if chart_type == 'humid' or view_type == 'charts':
-                        humidity_chart = generate_line_chart(
-                            df.select(['timestamp', 'humidity']),
-                            title="Humidity History",
-                            x_axis="Date",
-                            y_axis="Humidity (%)",
-                            bg_color=bg_color
-                        )
-                    
-                    if chart_type == 'precip' or view_type == 'charts':
-                        precipitation_chart = generate_line_chart(
-                            df.select(['timestamp', 'precipitation']),
-                            title="Precipitation History",
-                            x_axis="Date",
-                            y_axis="Precipitation (mm)",
-                            bg_color=bg_color
-                        )
-    except Exception as e:
-        # If there's an error, we'll keep the charts as None
-        pass
-    
     # Prepare context with all the data
     context = {
-        'location_name': current_city.name if current_city else 'Lisboa',
+        'location_name': location_name,
         'current_location_id': current_city.global_id if current_city else '',
         'available_cities': available_cities,
         'current_date': current_date,
@@ -336,21 +278,11 @@ def main_dashboard_view(request):
         }
     }
     
-    # Add chart data to context if available
-    if temperature_chart:
-        context['temperature_chart'] = temperature_chart
-    if humidity_chart:
-        context['humidity_chart'] = humidity_chart
-    if precipitation_chart:
-        context['precipitation_chart'] = precipitation_chart
-    
     # Handle HTMX partial responses
     if request.headers.get('HX-Request') == 'true':
         if location_id:
             # Location changed, return the full dashboard content
             return render(request, 'dashboard/main_dashboard_content.html', context)
-        elif chart_type:
-            return render(request, 'dashboard/charts_partial.html', context)
         elif view_type == 'summary':
             return render(request, 'dashboard/summary_partial.html', context)
         elif view_type == 'alerts':

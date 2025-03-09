@@ -143,7 +143,7 @@
                 {% if warnings %}
                     <div class="list-group list-group-flush">
                         {% for warning in warnings|slice:":3" %}
-                        <div class="list-group-item border-0 py-3">
+                        <div class="list-group-item bg-light border-0 py-3">
                             <div class="d-flex w-100 justify-content-between align-items-center">
                                 <h5 class="mb-1">
                                     <span class="badge bg-{{ warning.color }}">{{ warning.level|upper }}</span>
@@ -278,51 +278,6 @@
     </div>
 </div>
 
-<!-- Charts Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card bg-light border-0 shadow">
-            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">Weather Trends</h4>
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-primary" 
-                            hx-get="{% url 'dashboard:main_dashboard' %}?chart=temp&period=7days&location={{ current_location_id }}"
-                            hx-target="#charts-container"
-                            hx-swap="innerHTML">
-                        Temperature
-                    </button>
-                    <button class="btn btn-outline-primary"
-                            hx-get="{% url 'dashboard:main_dashboard' %}?chart=humid&period=7days&location={{ current_location_id }}"
-                            hx-target="#charts-container"
-                            hx-swap="innerHTML">
-                        Humidity
-                    </button>
-                    <button class="btn btn-outline-primary"
-                            hx-get="{% url 'dashboard:main_dashboard' %}?chart=precip&period=7days&location={{ current_location_id }}"
-                            hx-target="#charts-container"
-                            hx-swap="innerHTML">
-                        Precipitation
-                    </button>
-                </div>
-            </div>
-            <div class="card-body">
-                <div id="charts-container" style="height: 300px;">
-                    {% if temperature_chart %}
-                        <div id="temperature-chart"></div>
-                    {% else %}
-                        <div class="d-flex justify-content-center align-items-center h-100">
-                            <div class="text-center">
-                                <i class="fa fa-chart-line fa-3x mb-3 text-muted"></i>
-                                <p>Select a chart to display weather trends</p>
-                            </div>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Additional Information Section -->
 <div class="row">
     <!-- Air Quality Card -->
@@ -407,61 +362,3 @@
         </div>
     </div>
 </div>
-
-<!-- Only include chart rendering scripts if we have chart data -->
-{% if temperature_chart or humidity_chart or precipitation_chart %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        {% if temperature_chart %}
-        const temperatureChart = JSON.parse('{{ temperature_chart|escapejs }}');
-        Plotly.newPlot('temperature-chart', temperatureChart.data, temperatureChart.layout);
-        {% endif %}
-        
-        {% if humidity_chart %}
-        const humidityChart = JSON.parse('{{ humidity_chart|escapejs }}');
-        Plotly.newPlot('humidity-chart', humidityChart.data, humidityChart.layout);
-        {% endif %}
-        
-        {% if precipitation_chart %}
-        const precipitationChart = JSON.parse('{{ precipitation_chart|escapejs }}');
-        Plotly.newPlot('precipitation-chart', precipitationChart.data, precipitationChart.layout);
-        {% endif %}
-        
-        // Apply night mode styling if active
-        if (document.body.classList.contains('night-mode')) {
-            const bgColor = '#191C24';
-            const fontColor = '#ffffff';
-            
-            {% if temperature_chart %}
-            Plotly.relayout('temperature-chart', {
-                'paper_bgcolor': bgColor,
-                'plot_bgcolor': bgColor,
-                'font.color': fontColor,
-                'xaxis.color': fontColor,
-                'yaxis.color': fontColor
-            });
-            {% endif %}
-            
-            {% if humidity_chart %}
-            Plotly.relayout('humidity-chart', {
-                'paper_bgcolor': bgColor,
-                'plot_bgcolor': bgColor,
-                'font.color': fontColor,
-                'xaxis.color': fontColor,
-                'yaxis.color': fontColor
-            });
-            {% endif %}
-            
-            {% if precipitation_chart %}
-            Plotly.relayout('precipitation-chart', {
-                'paper_bgcolor': bgColor,
-                'plot_bgcolor': bgColor,
-                'font.color': fontColor,
-                'xaxis.color': fontColor,
-                'yaxis.color': fontColor
-            });
-            {% endif %}
-        }
-    });
-</script>
-{% endif %}
