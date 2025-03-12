@@ -12,7 +12,6 @@ def main_dashboard_view(request):
     """
     # Get location from request parameters or default to a fallback city
     location_id = request.GET.get('location')
-    view_type = request.GET.get('view', 'summary')
 
     # Default to fallback location if no location specified
     try:
@@ -278,17 +277,10 @@ def main_dashboard_view(request):
         }
     }
     
-    # Handle HTMX partial responses
-    if request.headers.get('HX-Request') == 'true':
-        if location_id:
-            # Location changed, return the full dashboard content
-            return render(request, 'dashboard/main_dashboard_content.html', context)
-        elif view_type == 'summary':
-            return render(request, 'dashboard/summary_partial.html', context)
-        elif view_type == 'alerts':
-            return render(request, 'dashboard/alerts_partial.html', context)
-        else:
-            return render(request, 'dashboard/main_dashboard_content.html', context)
+    # Handle HTMX partial responses for location changes
+    if request.headers.get('HX-Request') == 'true' and location_id:
+        # Location changed, return the main dashboard content
+        return render(request, 'dashboard/main_dashboard_content.html', context)
     
     # Render full template
     return render(request, 'dashboard/main_dashboard.html', context)

@@ -1,0 +1,264 @@
+{% extends 'includes/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid pt-4 px-4">
+    <!-- Page Header with Navigation -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="text-start">
+                {{ station.name }} Temperature Details
+                <span class="fs-6 text-muted ms-2">{{ time_label }}</span>
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="btn-group">
+                <a href="?range=24h" class="btn btn-sm {% if time_range == '24h' %}btn-primary{% else %}btn-outline-primary{% endif %}">24h</a>
+                <a href="?range=48h" class="btn btn-sm {% if time_range == '48h' %}btn-primary{% else %}btn-outline-primary{% endif %}">48h</a>
+                <a href="?range=7d" class="btn btn-sm {% if time_range == '7d' %}btn-primary{% else %}btn-outline-primary{% endif %}">7d</a>
+                <a href="?range=30d" class="btn btn-sm {% if time_range == '30d' %}btn-primary{% else %}btn-outline-primary{% endif %}">30d</a>
+                <a href="?range=90d" class="btn btn-sm {% if time_range == '90d' %}btn-primary{% else %}btn-outline-primary{% endif %}">90d</a>
+            </div>
+            
+            <a href="{% url 'climate:temperature_dashboard' %}?station={{ station.station_id }}" class="btn btn-outline-secondary btn-sm ms-2">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Temperature Statistics Overview -->
+    <div class="row mb-4">
+        <!-- Current Temperature Card -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="small text-secondary mb-1">Current Temperature</div>
+                    {% if stats.current_temp %}
+                    <div class="h1 mb-0">{{ stats.current_temp }}°C</div>
+                    <div class="small text-muted mt-2">
+                        Last updated: {{ stats.current_time|date:"d M Y, H:i" }}
+                    </div>
+                    {% else %}
+                    <div class="h1 mb-0">--°C</div>
+                    <div class="small text-muted mt-2">No current data available</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Min/Max Temperature Card -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="small text-secondary mb-1">Min / Max Temperature</div>
+                    {% if stats.min_temp and stats.max_temp %}
+                    <div class="h3 mb-0">
+                        <span class="text-primary">{{ stats.min_temp }}</span> / 
+                        <span class="text-danger">{{ stats.max_temp }}</span> °C
+                    </div>
+                    <div class="small text-muted mt-2">
+                        Temperature range for {{ time_label }}
+                    </div>
+                    {% else %}
+                    <div class="h3 mb-0">-- / -- °C</div>
+                    <div class="small text-muted mt-2">No temperature range data available</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Temperature Card -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="small text-secondary mb-1">Average Temperature</div>
+                    {% if stats.avg_temp %}
+                    <div class="h1 mb-0">{{ stats.avg_temp }}°C</div>
+                    <div class="small text-muted mt-2">Average over {{ time_label }}</div>
+                    {% else %}
+                    <div class="h1 mb-0">--°C</div>
+                    <div class="small text-muted mt-2">No average data available</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Points Card -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="small text-secondary mb-1">Observation Count</div>
+                    {% if stats.observation_count %}
+                    <div class="h1 mb-0">{{ stats.observation_count }}</div>
+                    <div class="small text-muted mt-2">Data points collected</div>
+                    {% else %}
+                    <div class="h1 mb-0">0</div>
+                    <div class="small text-muted mt-2">No data points available</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Temperature Chart -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Temperature History for {{ station.name }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if temperature_chart %}
+                    <div id="main-temperature-chart" style="width: 100%; height: 450px;"></div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fa-solid fa-chart-line fa-4x text-muted mb-3"></i>
+                        <h5>No Temperature Data Available</h5>
+                        <p class="text-muted">No readings available for the selected time period.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hourly Analysis (if available) -->
+    {% if hourly_data %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Time of Day Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div id="hourly-temperature-chart" style="width: 100%; height: 350px;"></div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <small class="text-muted">Average temperature by hour of day during the selected period</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Station Details -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Weather Station Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr>
+                                    <th style="width: 150px;">Station Name:</th>
+                                    <td>{{ station.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Station ID:</th>
+                                    <td>{{ station.station_id }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Municipality:</th>
+                                    <td>{{ station.concelho.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>District:</th>
+                                    <td>{{ station.concelho.distrito.name }}</td>
+                                </tr>
+                                {% if station.location %}
+                                <tr>
+                                    <th>Coordinates:</th>
+                                    <td>{{ station.location.y }}, {{ station.location.x }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>Station Location:</strong>
+                            </div>
+                            <!-- Map placeholder - in a real app, this would show a map -->
+                            <div class="bg-secondary bg-opacity-25 rounded" style="height: 200px; display: flex; align-items: center; justify-content: center;">
+                                <span class="text-muted">Map goes here</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if temperature_chart %}
+<!-- Plotly JS for the chart -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartData = {{ temperature_chart|safe }};
+    Plotly.newPlot('main-temperature-chart', JSON.parse(chartData));
+    
+    // Update chart on window resize
+    window.addEventListener('resize', function() {
+        Plotly.relayout('main-temperature-chart', {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true
+        });
+    });
+    
+    // Handle night mode toggle
+    document.addEventListener('nightModeToggled', function() {
+        if (document.body.classList.contains('night-mode')) {
+            Plotly.relayout('main-temperature-chart', {
+                'paper_bgcolor': '#1E1E1E',
+                'plot_bgcolor': '#1E1E1E',
+                'font.color': '#E0E0E0',
+                'xaxis.gridcolor': '#444444',
+                'yaxis.gridcolor': '#444444'
+            });
+        } else {
+            Plotly.relayout('main-temperature-chart', {
+                'paper_bgcolor': '#F3F6F9',
+                'plot_bgcolor': '#F3F6F9',
+                'font.color': '#000000',
+                'xaxis.gridcolor': '#E0E0E0',
+                'yaxis.gridcolor': '#E0E0E0'
+            });
+        }
+    });
+    
+    // Apply night mode if active
+    if (document.body.classList.contains('night-mode')) {
+        Plotly.relayout('main-temperature-chart', {
+            'paper_bgcolor': '#1E1E1E',
+            'plot_bgcolor': '#1E1E1E',
+            'font.color': '#E0E0E0',
+            'xaxis.gridcolor': '#444444',
+            'yaxis.gridcolor': '#444444'
+        });
+    }
+});
+</script>
+{% endif %}
+
+{% if hourly_data %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const hourlyChartData = {{ hourly_data|safe }};
+    Plotly.newPlot('hourly-temperature-chart', JSON.parse(hourlyChartData));
+    
+    // Apply night mode if active
+    if (document.body.classList.contains('night-mode')) {
+        Plotly.relayout('hourly-temperature-chart', {
+            'paper_bgcolor': '#1E1E1E',
+            'plot_bgcolor': '#1E1E1E',
+            'font.color': '#E0E0E0',
+            'xaxis.gridcolor': '#444444',
+            'yaxis.gridcolor': '#444444'
+        });
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

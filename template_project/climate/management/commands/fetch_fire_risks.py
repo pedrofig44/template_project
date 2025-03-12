@@ -14,6 +14,7 @@ class Command(BaseCommand):
        days = range(2)
        total_created = 0
        total_updated = 0
+       total_unchanged = 0
        total_errors = 0
 
        for day in days:
@@ -40,22 +41,49 @@ class Command(BaseCommand):
                        # Get the concelho from database
                        concelho = Concelho.objects.get(dico_code=dico_code)
                        
-                       # Create or update risk forecast
-                       risk, created = FireRisk.objects.update_or_create(
+                       # Get the risk level from the data
+                       risk_level = data['data']['rcm']
+                       
+                       # Check if there's an existing record for today's forecast
+                       existing_risk = FireRisk.objects.filter(
                            concelho=concelho,
                            forecast_day=day,
-                           defaults={
-                               'forecast_date': forecast_date,
-                               'model_run_date': model_run_date,
-                               'update_date': update_date,
-                               'risk_level': data['data']['rcm']
-                           }
-                       )
+                           forecast_date=forecast_date
+                       ).order_by('-update_date').first()
                        
-                       if created:
-                           total_created += 1
+                       if existing_risk:
+                           # Check if the risk level has changed
+                           if existing_risk.risk_level != risk_level or existing_risk.model_run_date != model_run_date:
+                               # Data has changed, create a new record
+                               FireRisk.objects.create(
+                                   concelho=concelho,
+                                   forecast_day=day,
+                                   forecast_date=forecast_date,
+                                   model_run_date=model_run_date,
+                                   update_date=update_date,
+                                   risk_level=risk_level
+                               )
+                               total_updated += 1
+                               self.stdout.write(
+                                   self.style.SUCCESS(f'Updated fire risk for concelho {concelho.name} (DICO: {dico_code}), day {day}')
+                               )
+                           else:
+                               # Data is the same, just note it's unchanged
+                               total_unchanged += 1
                        else:
-                           total_updated += 1
+                           # No existing record, create a new one
+                           FireRisk.objects.create(
+                               concelho=concelho,
+                               forecast_day=day,
+                               forecast_date=forecast_date,
+                               model_run_date=model_run_date,
+                               update_date=update_date,
+                               risk_level=risk_level
+                           )
+                           total_created += 1
+                           self.stdout.write(
+                               self.style.SUCCESS(f'Created new fire risk for concelho {concelho.name} (DICO: {dico_code}), day {day}')
+                           )
                            
                    except Concelho.DoesNotExist:
                        self.stdout.write(
@@ -86,8 +114,9 @@ class Command(BaseCommand):
        self.stdout.write(
            self.style.SUCCESS(
                f'Fire risk forecast processing completed:\n'
-               f'- Created: {total_created}\n'
-               f'- Updated: {total_updated}\n'
+               f'- New records created: {total_created}\n'
+               f'- Records updated: {total_updated}\n'
+               f'- Records unchanged: {total_unchanged}\n'
                f'- Errors: {total_errors}\n'
            )
        )

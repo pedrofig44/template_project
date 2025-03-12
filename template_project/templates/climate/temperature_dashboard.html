@@ -1,0 +1,329 @@
+{% extends 'includes/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid pt-4 px-4">
+    <!-- Dashboard Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="text-start">
+                Temperature Dashboard
+                <span class="fs-6 text-muted ms-2">{{ time_label }}</span>
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="btn-group">
+                <a href="?range=24h" class="btn btn-sm {% if time_range == '24h' %}btn-primary{% else %}btn-outline-primary{% endif %}">24h</a>
+                <a href="?range=48h" class="btn btn-sm {% if time_range == '48h' %}btn-primary{% else %}btn-outline-primary{% endif %}">48h</a>
+                <a href="?range=7d" class="btn btn-sm {% if time_range == '7d' %}btn-primary{% else %}btn-outline-primary{% endif %}">7d</a>
+                <a href="?range=30d" class="btn btn-sm {% if time_range == '30d' %}btn-primary{% else %}btn-outline-primary{% endif %}">30d</a>
+            </div>
+            
+            <div class="dropdown d-inline-block ms-2">
+                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="stationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    {% if selected_station %}{{ selected_station.name }}{% else %}Select Station{% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="stationDropdown" style="max-height: 300px; overflow-y: auto;">
+                    {% for station in stations %}
+                    <li><a class="dropdown-item {% if selected_station.id == station.id %}active{% endif %}" href="?station={{ station.station_id }}&range={{ time_range }}">{{ station.name }}</a></li>
+                    {% empty %}
+                    <li><a class="dropdown-item disabled" href="#">No stations available</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    {% if selected_station %}
+    <!-- Temperature Overview Cards -->
+    <div class="row mb-4">
+        <!-- Current Temperature Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fa-solid fa-temperature-half fa-3x text-primary"></i>
+                        </div>
+                        <div class="col-9">
+                            <div class="small text-secondary mb-1">Current Temperature</div>
+                            {% if stats.current_temp %}
+                            <div class="h2 mb-0">{{ stats.current_temp }}°C</div>
+                            {% if stats.temp_trend %}
+                            <div class="small mt-2">
+                                {% if stats.temp_trend == 'rising' %}
+                                <i class="fa-solid fa-arrow-trend-up text-danger"></i> Rising (+{{ stats.temp_diff }}°C)
+                                {% elif stats.temp_trend == 'falling' %}
+                                <i class="fa-solid fa-arrow-trend-down text-primary"></i> Falling ({{ stats.temp_diff }}°C)
+                                {% else %}
+                                <i class="fa-solid fa-arrow-right text-secondary"></i> Stable
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <div class="h2 mb-0">--°C</div>
+                            <div class="small text-muted mt-2">No data available</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Maximum Temperature Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fa-solid fa-temperature-arrow-up fa-3x text-danger"></i>
+                        </div>
+                        <div class="col-9">
+                            <div class="small text-secondary mb-1">Maximum Temperature</div>
+                            {% if stats.max_temp %}
+                            <div class="h2 mb-0">{{ stats.max_temp }}°C</div>
+                            <div class="small text-muted mt-2">{{ time_label }}</div>
+                            {% else %}
+                            <div class="h2 mb-0">--°C</div>
+                            <div class="small text-muted mt-2">No data available</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Minimum Temperature Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fa-solid fa-temperature-arrow-down fa-3x text-primary"></i>
+                        </div>
+                        <div class="col-9">
+                            <div class="small text-secondary mb-1">Minimum Temperature</div>
+                            {% if stats.min_temp %}
+                            <div class="h2 mb-0">{{ stats.min_temp }}°C</div>
+                            <div class="small text-muted mt-2">{{ time_label }}</div>
+                            {% else %}
+                            <div class="h2 mb-0">--°C</div>
+                            <div class="small text-muted mt-2">No data available</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Temperature Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fa-solid fa-chart-line fa-3x text-success"></i>
+                        </div>
+                        <div class="col-9">
+                            <div class="small text-secondary mb-1">Average Temperature</div>
+                            {% if stats.avg_temp %}
+                            <div class="h2 mb-0">{{ stats.avg_temp }}°C</div>
+                            <div class="small text-muted mt-2">{{ time_label }}</div>
+                            {% else %}
+                            <div class="h2 mb-0">--°C</div>
+                            <div class="small text-muted mt-2">No data available</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Temperature Chart -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header d-flex justify-content-between align-items-center bg-transparent border-0">
+                    <h5 class="mb-0">Temperature Trend for {{ selected_station.name }}</h5>
+                    <a href="{% url 'climate:station_temperature_detail' selected_station.station_id %}?range={{ time_range }}" class="btn btn-sm btn-outline-primary">View Details</a>
+                </div>
+                <div class="card-body">
+                    {% if temperature_data %}
+                    <div id="temperature-chart" style="width: 100%; height: 400px;"></div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fa-solid fa-chart-line fa-4x text-muted mb-3"></i>
+                        <h5>No Temperature Data Available</h5>
+                        <p class="text-muted">No readings available for the selected time period.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forecast Preview -->
+    {% if forecast_data %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Temperature Forecast for {{ selected_station.concelho.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for forecast in forecast_data %}
+                        <div class="col-md-4 col-lg-2 mb-3">
+                            <div class="bg-white rounded shadow-sm p-3 text-center h-100">
+                                <h6>{{ forecast.date|date:"D, d M" }}</h6>
+                                <div class="my-3">
+                                    <i class="fa-solid fa-temperature-high text-danger fa-2x mb-2"></i>
+                                    <div class="h4 mb-0">{{ forecast.max_temp|floatformat:1 }}°C</div>
+                                    <div class="small text-muted">High</div>
+                                </div>
+                                <div class="my-3">
+                                    <i class="fa-solid fa-temperature-low text-primary fa-2x mb-2"></i>
+                                    <div class="h4 mb-0">{{ forecast.min_temp|floatformat:1 }}°C</div>
+                                    <div class="small text-muted">Low</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Station Details Card -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Weather Station Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr>
+                                    <th style="width: 150px;">Station Name:</th>
+                                    <td>{{ selected_station.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Station ID:</th>
+                                    <td>{{ selected_station.station_id }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Municipality:</th>
+                                    <td>{{ selected_station.concelho.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>District:</th>
+                                    <td>{{ selected_station.concelho.distrito.name }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>Station Location:</strong>
+                            </div>
+                            <!-- Map placeholder - in a real app, this would show a map of the station's location -->
+                            <div class="bg-secondary bg-opacity-25 rounded" style="height: 200px; display: flex; align-items: center; justify-content: center;">
+                                <span class="text-muted">Map goes here</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- No Station Selected -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-body text-center py-5">
+                    <i class="fa-solid fa-triangle-exclamation fa-4x text-warning mb-3"></i>
+                    <h4>No Weather Station Selected</h4>
+                    <p>Please select a weather station from the dropdown menu to view temperature data.</p>
+                    
+                    {% if stations %}
+                    <div class="mt-4">
+                        <h5>Available Stations:</h5>
+                        <div class="row justify-content-center mt-3">
+                            {% for station in stations|slice:":6" %}
+                            <div class="col-md-4 col-lg-3 mb-3">
+                                <a href="?station={{ station.station_id }}" class="btn btn-outline-primary btn-block py-2">{{ station.name }}</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if stations.count > 6 %}
+                        <div class="mt-2 text-muted">And {{ stations.count|add:"-6" }} more stations</div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mt-4">
+                        <i class="fa-solid fa-info-circle me-2"></i>
+                        No weather stations found in the database. Please add stations first.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if temperature_data %}
+<!-- Plotly JS for the chart -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartData = {{ temperature_data|safe }};
+    Plotly.newPlot('temperature-chart', JSON.parse(chartData));
+    
+    // Update chart on window resize
+    window.addEventListener('resize', function() {
+        Plotly.relayout('temperature-chart', {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true
+        });
+    });
+    
+    // Handle night mode toggle
+    document.addEventListener('nightModeToggled', function() {
+        if (document.body.classList.contains('night-mode')) {
+            Plotly.relayout('temperature-chart', {
+                'paper_bgcolor': '#1E1E1E',
+                'plot_bgcolor': '#1E1E1E',
+                'font.color': '#E0E0E0',
+                'xaxis.gridcolor': '#444444',
+                'yaxis.gridcolor': '#444444'
+            });
+        } else {
+            Plotly.relayout('temperature-chart', {
+                'paper_bgcolor': '#F3F6F9',
+                'plot_bgcolor': '#F3F6F9',
+                'font.color': '#000000',
+                'xaxis.gridcolor': '#E0E0E0',
+                'yaxis.gridcolor': '#E0E0E0'
+            });
+        }
+    });
+    
+    // Apply night mode if active
+    if (document.body.classList.contains('night-mode')) {
+        Plotly.relayout('temperature-chart', {
+            'paper_bgcolor': '#1E1E1E',
+            'plot_bgcolor': '#1E1E1E',
+            'font.color': '#E0E0E0',
+            'xaxis.gridcolor': '#444444',
+            'yaxis.gridcolor': '#444444'
+        });
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

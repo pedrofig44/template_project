@@ -18,6 +18,7 @@ class Command(BaseCommand):
         
         forecasts_created = 0
         forecasts_updated = 0
+        forecasts_unchanged = 0
         errors = 0
 
         for index, city in enumerate(cities, 1):
@@ -31,33 +32,73 @@ class Command(BaseCommand):
                 response.raise_for_status()
                 forecast_data = response.json()
                 
+                # Get update time for all forecasts in this response
+                update_date = parse_datetime(forecast_data['dataUpdate'])
+                
                 # Process each day's forecast
                 for daily_data in forecast_data['data']:
                     # Convert date string to datetime
                     forecast_date = datetime.strptime(daily_data['forecastDate'], '%Y-%m-%d').date()
-                    update_date = parse_datetime(forecast_data['dataUpdate'])
                     
-                    # Create or update forecast
-                    forecast, created = DailyForecast.objects.update_or_create(
+                    # Extract forecast details
+                    t_min = float(daily_data.get('tMin', 0))
+                    t_max = float(daily_data.get('tMax', 0))
+                    precipita_prob = float(daily_data.get('precipitaProb', 0))
+                    wind_dir = daily_data.get('predWindDir', 'N')
+                    wind_speed_class = int(daily_data.get('classWindSpeed', 0))
+                    weather_type = int(daily_data.get('idWeatherType', 0))
+                    latitude = float(daily_data.get('latitude', city.latitude))
+                    longitude = float(daily_data.get('longitude', city.longitude))
+                    
+                    # Check if we already have a forecast for this date
+                    existing_forecast = DailyForecast.objects.filter(
                         city=city,
-                        forecast_date=forecast_date,
-                        defaults={
-                            'update_date': update_date,
-                            't_min': float(daily_data.get('tMin', 0)),
-                            't_max': float(daily_data.get('tMax', 0)),
-                            'precipita_prob': float(daily_data.get('precipitaProb', 0)),
-                            'wind_dir': daily_data.get('predWindDir', 'N'),
-                            'wind_speed_class': int(daily_data.get('classWindSpeed', 0)),
-                            'weather_type': int(daily_data.get('idWeatherType', 0)),
-                            'latitude': float(daily_data.get('latitude', city.latitude)),
-                            'longitude': float(daily_data.get('longitude', city.longitude))
-                        }
-                    )
+                        forecast_date=forecast_date
+                    ).order_by('-update_date').first()
                     
-                    if created:
-                        forecasts_created += 1
+                    if existing_forecast:
+                        # Check if the forecast has changed
+                        if (existing_forecast.t_min != t_min or 
+                            existing_forecast.t_max != t_max or
+                            existing_forecast.precipita_prob != precipita_prob or
+                            existing_forecast.wind_dir != wind_dir or
+                            existing_forecast.wind_speed_class != wind_speed_class or
+                            existing_forecast.weather_type != weather_type):
+                            
+                            # Create a new forecast record to track the change
+                            DailyForecast.objects.create(
+                                city=city,
+                                forecast_date=forecast_date,
+                                update_date=update_date,
+                                t_min=t_min,
+                                t_max=t_max,
+                                precipita_prob=precipita_prob,
+                                wind_dir=wind_dir,
+                                wind_speed_class=wind_speed_class,
+                                weather_type=weather_type,
+                                latitude=latitude,
+                                longitude=longitude
+                            )
+                            forecasts_updated += 1
+                        else:
+                            # Forecast hasn't changed
+                            forecasts_unchanged += 1
                     else:
-                        forecasts_updated += 1
+                        # No existing forecast, create a new one
+                        DailyForecast.objects.create(
+                            city=city,
+                            forecast_date=forecast_date,
+                            update_date=update_date,
+                            t_min=t_min,
+                            t_max=t_max,
+                            precipita_prob=precipita_prob,
+                            wind_dir=wind_dir,
+                            wind_speed_class=wind_speed_class,
+                            weather_type=weather_type,
+                            latitude=latitude,
+                            longitude=longitude
+                        )
+                        forecasts_created += 1
                 
                 # Add a small delay to avoid overwhelming the API
                 time.sleep(0.5)
@@ -77,8 +118,9 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(
                 f'Forecast processing completed:\n'
-                f'- Created: {forecasts_created}\n'
-                f'- Updated: {forecasts_updated}\n'
+                f'- New forecasts created: {forecasts_created}\n'
+                f'- Forecasts updated: {forecasts_updated}\n'
+                f'- Forecasts unchanged: {forecasts_unchanged}\n'
                 f'- Errors: {errors}\n'
             )
         )

@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 from climate.models import WeatherWarning
+from location.models import City
 import requests
 from datetime import datetime
 import pytz
@@ -21,6 +22,8 @@ class Command(BaseCommand):
             
             # Counter for new and updated warnings
             warnings_created = 0
+            warnings_updated = 0
+            warnings_unchanged = 0
             
             # Process each warning
             for warning in warnings_data:
@@ -34,25 +37,72 @@ class Command(BaseCommand):
                 if end_time.tzinfo is None:
                     end_time = pytz.UTC.localize(end_time)
                 
-                # Create or update warning
-                warning_obj, created = WeatherWarning.objects.update_or_create(
-                    awareness_type=warning['awarenessTypeName'],
-                    area_code=warning['idAreaAviso'],
-                    start_time=start_time,
-                    end_time=end_time,
-                    defaults={
-                        'awareness_level': warning['awarenessLevelID'],
-                        'description': warning.get('text', '')
-                    }
-                )
+                # Get key identifiers for the warning
+                awareness_type = warning['awarenessTypeName']
+                area_code = warning['idAreaAviso']
+                awareness_level = warning['awarenessLevelID']
+                description = warning.get('text', '')
                 
-                if created:
+                # Check if a similar warning already exists
+                existing_warning = WeatherWarning.objects.filter(
+                    awareness_type=awareness_type,
+                    area_code=area_code,
+                    start_time=start_time,
+                    end_time=end_time
+                ).first()
+                
+                # Try to find a matching city for this area code
+                matching_city = None
+                try:
+                    matching_city = City.objects.filter(ipma_area_code=area_code).first()
+                except Exception:
+                    # If any error occurs, continue without setting the city
+                    pass
+                
+                if existing_warning:
+                    # Check if the warning has changed
+                    if (existing_warning.awareness_level != awareness_level or 
+                        existing_warning.description != description):
+                        
+                        # Create a new record to track the change
+                        new_warning = WeatherWarning.objects.create(
+                            awareness_type=awareness_type,
+                            area_code=area_code,
+                            start_time=start_time,
+                            end_time=end_time,
+                            awareness_level=awareness_level,
+                            description=description,
+                            city=matching_city
+                        )
+                        warnings_updated += 1
+                        self.stdout.write(
+                            self.style.SUCCESS(f'Updated warning: {awareness_type} for {area_code}')
+                        )
+                    else:
+                        warnings_unchanged += 1
+                else:
+                    # Create a new warning
+                    new_warning = WeatherWarning.objects.create(
+                        awareness_type=awareness_type,
+                        area_code=area_code,
+                        start_time=start_time,
+                        end_time=end_time,
+                        awareness_level=awareness_level,
+                        description=description,
+                        city=matching_city
+                    )
                     warnings_created += 1
+                    self.stdout.write(
+                        self.style.SUCCESS(f'Created new warning: {awareness_type} for {area_code}')
+                    )
             
             # Print summary
             self.stdout.write(
                 self.style.SUCCESS(
-                    f'Successfully processed warnings. Created {warnings_created} new warnings.'
+                    f'Successfully processed warnings:\n'
+                    f'- New warnings created: {warnings_created}\n'
+                    f'- Warnings updated: {warnings_updated}\n'
+                    f'- Warnings unchanged: {warnings_unchanged}\n'
                 )
             )
             

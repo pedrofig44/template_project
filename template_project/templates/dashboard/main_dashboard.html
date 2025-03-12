@@ -37,32 +37,12 @@
                     {% endfor %}
                 </ul>
             </div>
-            <div class="btn-group ms-2">
-                <button class="btn btn-outline-secondary" 
-                        hx-get="{% url 'dashboard:main_dashboard' %}?view=summary&location={{ current_location_id }}"
-                        hx-target="#dashboard-content"
-                        hx-swap="innerHTML">
-                    Summary
-                </button>
-                <button class="btn btn-outline-secondary"
-                        hx-get="{% url 'dashboard:main_dashboard' %}?view=alerts&location={{ current_location_id }}"
-                        hx-target="#dashboard-content"
-                        hx-swap="innerHTML">
-                    Alerts
-                </button>
-            </div>
         </div>
     </div>
 
     <!-- Main Dashboard Content -->
     <div id="dashboard-content">
-        {% if view_type == 'summary' %}
-            {% include 'dashboard/summary_partial.html' %}
-        {% elif view_type == 'alerts' %}
-            {% include 'dashboard/alerts_partial.html' %}
-        {% else %}
-            {% include 'dashboard/main_dashboard_content.html' %}
-        {% endif %}
+        {% include 'dashboard/main_dashboard_content.html' %}
     </div>
 </div>
 
