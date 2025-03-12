@@ -13,10 +13,10 @@
         </div>
         <div class="col-md-6 text-end">
             <div class="btn-group">
-                <a href="?range=24h" class="btn btn-sm {% if time_range == '24h' %}btn-primary{% else %}btn-outline-primary{% endif %}">24h</a>
-                <a href="?range=48h" class="btn btn-sm {% if time_range == '48h' %}btn-primary{% else %}btn-outline-primary{% endif %}">48h</a>
-                <a href="?range=7d" class="btn btn-sm {% if time_range == '7d' %}btn-primary{% else %}btn-outline-primary{% endif %}">7d</a>
-                <a href="?range=30d" class="btn btn-sm {% if time_range == '30d' %}btn-primary{% else %}btn-outline-primary{% endif %}">30d</a>
+                <a href="?station={{ selected_station.station_id }}&range=24h" class="btn btn-sm {% if time_range == '24h' %}btn-primary{% else %}btn-outline-primary{% endif %}">24h</a>
+                <a href="?station={{ selected_station.station_id }}&range=48h" class="btn btn-sm {% if time_range == '48h' %}btn-primary{% else %}btn-outline-primary{% endif %}">48h</a>
+                <a href="?station={{ selected_station.station_id }}&range=7d" class="btn btn-sm {% if time_range == '7d' %}btn-primary{% else %}btn-outline-primary{% endif %}">7d</a>
+                <a href="?station={{ selected_station.station_id }}&range=30d" class="btn btn-sm {% if time_range == '30d' %}btn-primary{% else %}btn-outline-primary{% endif %}">30d</a>
             </div>
             
             <div class="dropdown d-inline-block ms-2">
@@ -222,7 +222,13 @@
                                 </tr>
                                 <tr>
                                     <th>District:</th>
-                                    <td>{{ selected_station.concelho.distrito.name }}</td>
+                                    <td>
+                                        {% if selected_station.concelho and selected_station.concelho.distrito %}
+                                            {{ selected_station.concelho.distrito.name }}
+                                        {% else %}
+                                            Not Available
+                                        {% endif %}
+                                    </td>
                                 </tr>
                             </table>
                         </div>
@@ -230,10 +236,75 @@
                             <div class="mb-3">
                                 <strong>Station Location:</strong>
                             </div>
-                            <!-- Map placeholder - in a real app, this would show a map of the station's location -->
-                            <div class="bg-secondary bg-opacity-25 rounded" style="height: 200px; display: flex; align-items: center; justify-content: center;">
-                                <span class="text-muted">Map goes here</span>
-                            </div>
+                            <!-- Station Map -->
+                            <div id="station-map" style="height: 250px; width: 100%;" class="rounded"></div>
+                                                    
+                            <!-- Initialize Map Script (only if station is selected) -->
+                            {% if selected_station and selected_station.location %}
+                            <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                // Initialize map
+                                var map = L.map('station-map').setView(
+                                    [{{ selected_station.location.y }}, {{ selected_station.location.x }}], 
+                                    12  // Zoom level
+                                );
+                                
+                                // Add basemap tile layer (OpenStreetMap)
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                }).addTo(map);
+                                
+                                // Add satellite imagery option
+                                var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                                });
+                                
+                                // Layer control
+                                var baseLayers = {
+                                    "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                    }),
+                                    "Satellite": satellite
+                                };
+                                
+                                L.control.layers(baseLayers).addTo(map);
+                                
+                                // Add station marker
+                                L.marker([{{ selected_station.location.y }}, {{ selected_station.location.x }}])
+                                    .addTo(map)
+                                    .bindPopup("<strong>{{ selected_station.name }}</strong><br>{{ selected_station.concelho.name }}");
+                                
+                                // Handle night mode changes
+                                document.addEventListener('nightModeToggled', function() {
+                                    if (document.body.classList.contains('night-mode')) {
+                                        // You could switch to a darker map style here if needed
+                                    }
+                                });
+                            });
+                            </script>
+                            {% elif selected_station %}
+                            <!-- If station exists but no location data -->
+                            <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                // Initialize map centered on Portugal
+                                var map = L.map('station-map').setView([39.5, -8.0], 6);
+                                
+                                // Add basemap
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                }).addTo(map);
+                                
+                                // Add a notice that location is not available
+                                var noLocationNotice = L.control({position: 'bottomleft'});
+                                noLocationNotice.onAdd = function(map) {
+                                    var div = L.DomUtil.create('div', 'info legend');
+                                    div.innerHTML = '<div class="alert alert-warning p-2 m-1" style="background-color: white;">No precise location data available for this station</div>';
+                                    return div;
+                                };
+                                noLocationNotice.addTo(map);
+                            });
+                            </script>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -282,7 +353,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const chartData = {{ temperature_data|safe }};
-    Plotly.newPlot('temperature-chart', JSON.parse(chartData));
+    Plotly.newPlot('temperature-chart', chartData);
     
     // Update chart on window resize
     window.addEventListener('resize', function() {

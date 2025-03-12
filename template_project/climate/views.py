@@ -10,6 +10,8 @@ from location.models import WeatherStation, City, Concelho
 from climate.models import StationObservation, DailyForecast
 from dashboard.utils import generate_line_chart
 
+from django.core.serializers import serialize
+
 def temperature_dashboard(request):
     """
     Main temperature dashboard view showing temperature data across all stations
@@ -23,6 +25,7 @@ def temperature_dashboard(request):
         selected_station = get_object_or_404(WeatherStation, station_id=selected_station_id)
     else:
         selected_station = stations.first()
+        
     
     # Get the time range (default to last 24 hours)
     time_range = request.GET.get('range', '24h')
@@ -136,6 +139,7 @@ def temperature_dashboard(request):
                         'max_temp': forecast.t_max,
                         'forecast_item': forecast
                     })
+                    
     
     # Prepare context
     context = {
@@ -294,3 +298,66 @@ def temperature_chart_data(request):
         chart_data['temperatures'].append(round(obs.temperature, 1))
     
     return JsonResponse(chart_data)
+
+
+def station_location_data(request, station_id):
+    """Return GeoJSON for a specific weather station"""
+    try:
+        station = WeatherStation.objects.get(station_id=station_id)
+        
+        # If the station has a location field (Point)
+        if station.location:
+            # Create GeoJSON feature
+            feature = {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [station.location.x, station.location.y]  # [longitude, latitude]
+                },
+                "properties": {
+                    "name": station.name,
+                    "id": station.station_id,
+                    "concelho": station.concelho.name,
+                }
+            }
+            
+            # Return as GeoJSON
+            return JsonResponse({
+                "type": "FeatureCollection",
+                "features": [feature]
+            })
+        else:
+            # If no location field, try to get coordinates another way
+            # Assuming you might have latitude/longitude directly on the model
+            lat = getattr(station, 'latitude', None)
+            lng = getattr(station, 'longitude', None)
+            
+            if lat and lng:
+                feature = {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [lng, lat]  # [longitude, latitude]
+                    },
+                    "properties": {
+                        "name": station.name,
+                        "id": station.station_id,
+                        "concelho": station.concelho.name,
+                    }
+                }
+                
+                return JsonResponse({
+                    "type": "FeatureCollection",
+                    "features": [feature]
+                })
+            
+            # If no coordinates available
+            return JsonResponse({
+                "type": "FeatureCollection",
+                "features": []
+            })
+    except WeatherStation.DoesNotExist:
+        return JsonResponse({
+            "type": "FeatureCollection",
+            "features": []
+        })
