@@ -22,4 +22,5 @@ urlpatterns = [
     path('', include('dashboard.urls', namespace='dashboard')),
     path('', include('data_source.urls')),
     path('', include('climate.urls', namespace='climate')),
+    path('', include('utils.urls', namespace='utils')),
 ]

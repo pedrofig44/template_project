@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     "analytics",
     "api",
     "location",
-    "climate"
+    "climate",
+    "utils"
 ]
 
 MIDDLEWARE = [

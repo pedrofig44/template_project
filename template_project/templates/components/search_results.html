@@ -1,0 +1,19 @@
+<!-- templates/components/search_results.html -->
+{% if items %}
+  {% for item in items %}
+  <a class="dropdown-item {% if item.station_id|stringformat:'s' == current_id|stringformat:'s' or item.global_id|stringformat:'s' == current_id|stringformat:'s' %}active{% endif %}" 
+     href="{{ base_url }}?{{ query_param }}={{ item.station_id|default:item.global_id }}&{{ extra_params|default:'' }}"
+     hx-get="{{ base_url }}?{{ query_param }}={{ item.station_id|default:item.global_id }}&{{ extra_params|default:'' }}"
+     hx-target="{{ hx_target|default:'#dashboard-content' }}"
+     hx-swap="{{ hx_swap|default:'innerHTML' }}"
+     hx-trigger="click"
+     hx-indicator="{{ hx_indicator|default:'#spinner' }}">
+    {{ item.name }}
+    {% if item.concelho %}
+    <small class="text-muted d-block">{{ item.concelho.name }}</small>
+    {% endif %}
+  </a>
+  {% endfor %}
+{% else %}
+  <div class="dropdown-item disabled">No results found</div>
+{% endif %}

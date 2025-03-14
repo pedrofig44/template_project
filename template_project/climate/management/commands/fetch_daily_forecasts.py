@@ -65,21 +65,22 @@ class Command(BaseCommand):
                             existing_forecast.wind_speed_class != wind_speed_class or
                             existing_forecast.weather_type != weather_type):
                             
-                            # Create a new forecast record to track the change
-                            DailyForecast.objects.create(
-                                city=city,
-                                forecast_date=forecast_date,
-                                update_date=update_date,
-                                t_min=t_min,
-                                t_max=t_max,
-                                precipita_prob=precipita_prob,
-                                wind_dir=wind_dir,
-                                wind_speed_class=wind_speed_class,
-                                weather_type=weather_type,
-                                latitude=latitude,
-                                longitude=longitude
-                            )
+                            # Update the existing forecast instead of creating a new one
+                            existing_forecast.update_date = update_date
+                            existing_forecast.t_min = t_min
+                            existing_forecast.t_max = t_max
+                            existing_forecast.precipita_prob = precipita_prob
+                            existing_forecast.wind_dir = wind_dir
+                            existing_forecast.wind_speed_class = wind_speed_class
+                            existing_forecast.weather_type = weather_type
+                            existing_forecast.latitude = latitude
+                            existing_forecast.longitude = longitude
+                            existing_forecast.save()
+                            
                             forecasts_updated += 1
+                            self.stdout.write(
+                                self.style.SUCCESS(f'Updated forecast for {city.name}, date {forecast_date}')
+                            )
                         else:
                             # Forecast hasn't changed
                             forecasts_unchanged += 1
@@ -99,6 +100,9 @@ class Command(BaseCommand):
                             longitude=longitude
                         )
                         forecasts_created += 1
+                        self.stdout.write(
+                            self.style.SUCCESS(f'Created new forecast for {city.name}, date {forecast_date}')
+                        )
                 
                 # Add a small delay to avoid overwhelming the API
                 time.sleep(0.5)

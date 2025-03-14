@@ -47,22 +47,19 @@ class Command(BaseCommand):
                        # Check if there's an existing record for today's forecast
                        existing_risk = FireRisk.objects.filter(
                            concelho=concelho,
-                           forecast_day=day,
-                           forecast_date=forecast_date
-                       ).order_by('-update_date').first()
+                           forecast_day=day
+                       ).first()
                        
                        if existing_risk:
                            # Check if the risk level has changed
                            if existing_risk.risk_level != risk_level or existing_risk.model_run_date != model_run_date:
-                               # Data has changed, create a new record
-                               FireRisk.objects.create(
-                                   concelho=concelho,
-                                   forecast_day=day,
-                                   forecast_date=forecast_date,
-                                   model_run_date=model_run_date,
-                                   update_date=update_date,
-                                   risk_level=risk_level
-                               )
+                               # Update the existing record instead of creating a new one
+                               existing_risk.forecast_date = forecast_date
+                               existing_risk.model_run_date = model_run_date
+                               existing_risk.update_date = update_date
+                               existing_risk.risk_level = risk_level
+                               existing_risk.save()
+                               
                                total_updated += 1
                                self.stdout.write(
                                    self.style.SUCCESS(f'Updated fire risk for concelho {concelho.name} (DICO: {dico_code}), day {day}')

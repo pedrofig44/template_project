@@ -1,0 +1,38 @@
+<!-- templates/components/searchable_dropdown.html -->
+<div class="searchable-dropdown">
+    <div class="dropdown">
+      <button class="btn {{ button_class|default:'btn-primary' }} dropdown-toggle" 
+              type="button" 
+              id="{{ dropdown_id }}" 
+              data-bs-toggle="dropdown" 
+              aria-expanded="false">
+        {{ selected_item_name|default:'Select Item' }}
+      </button>
+      <div class="dropdown-menu p-2" aria-labelledby="{{ dropdown_id }}" style="width: 280px;">
+        <!-- Search input with HTMX -->
+        <div class="mb-2">
+          <input type="text" 
+                 class="form-control form-control-sm" 
+                 name="search"
+                 placeholder="Search..."
+                 hx-post="{% url 'utils:search_items' %}"
+                 hx-trigger="keyup changed delay:300ms"
+                 hx-target="#{{ results_id }}"
+                 hx-indicator="#{{ spinner_id }}"
+                 hx-vals='{"item_type": "{{ item_type }}", "current_id": "{{ current_id }}", "base_url": "{{ base_url }}", "query_param": "{{ query_param }}", "extra_params": "{{ extra_params }}", "hx_target": "{{ hx_target }}"}'>
+        </div>
+        
+        <!-- Loading indicator -->
+        <div id="{{ spinner_id }}" class="htmx-indicator text-center mb-2">
+          <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+        
+        <!-- Results container -->
+        <div id="{{ results_id }}" class="dropdown-items-container" style="max-height: 300px; overflow-y: auto;">
+          {% include 'components/search_results.html' %}
+        </div>
+      </div>
+    </div>
+  </div>
