@@ -23,4 +23,5 @@ urlpatterns = [
     path('', include('data_source.urls')),
     path('', include('climate.urls', namespace='climate')),
     path('', include('utils.urls', namespace='utils')),
+    path('', include('wildfires.urls', namespace='wildfires')),
 ]

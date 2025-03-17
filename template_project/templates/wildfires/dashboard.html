@@ -1,0 +1,71 @@
+<!-- wildfires/templates/wildfires/dashboard.html -->
+{% extends 'includes/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid pt-4 px-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="text-start">
+                Wildfire Statistics Dashboard
+                <span class="fs-6 text-muted ms-2">Annual Summary</span>
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <!-- Concelho dropdown with HTMX -->
+            {% include 'components/searchable_dropdown.html' with 
+               dropdown_id="concelhoDropdown" 
+               button_class="btn-primary dropdown-toggle" 
+               selected_item_name=selected_concelho.name|default:'Select Concelho' 
+               item_type="concelho" 
+               current_id=selected_concelho.dico_code
+               results_id="concelho-search-results" 
+               spinner_id="concelho-search-spinner" 
+               base_url="wildfires:dashboard" 
+               query_param="concelho" 
+               hx_target="#dashboard-content"
+            %}
+        </div>
+    </div>
+
+    <!-- Dashboard Content Container for HTMX updates -->
+    <div id="dashboard-content">
+        {% include 'wildfires/dashboard_content.html' %}
+    </div>
+</div>
+
+<!-- Script for updating charts on night mode toggle -->
+<script>
+// Apply night mode to charts when toggled
+document.addEventListener('nightModeToggled', function() {
+    if (document.body.classList.contains('night-mode')) {
+        // Update charts for night mode if they exist
+        if (typeof Plotly !== 'undefined') {
+            document.querySelectorAll('[id^="chart-"]').forEach(function(chart) {
+                Plotly.relayout(chart.id, {
+                    'paper_bgcolor': '#1E1E1E',
+                    'plot_bgcolor': '#1E1E1E',
+                    'font.color': '#E0E0E0',
+                    'xaxis.gridcolor': '#444444',
+                    'yaxis.gridcolor': '#444444'
+                });
+            });
+        }
+    } else {
+        // Revert to day mode
+        if (typeof Plotly !== 'undefined') {
+            document.querySelectorAll('[id^="chart-"]').forEach(function(chart) {
+                Plotly.relayout(chart.id, {
+                    'paper_bgcolor': '#F3F6F9',
+                    'plot_bgcolor': '#F3F6F9',
+                    'font.color': '#000000',
+                    'xaxis.gridcolor': '#E0E0E0',
+                    'yaxis.gridcolor': '#E0E0E0'
+                });
+            });
+        }
+    }
+});
+</script>
+{% endblock %}

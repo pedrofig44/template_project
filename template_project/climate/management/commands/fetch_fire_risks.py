@@ -12,9 +12,8 @@ class Command(BaseCommand):
    def handle(self, *args, **kwargs):
        # Fetch for today (0) and tomorrow (1)
        days = range(2)
-       total_created = 0
-       total_updated = 0
-       total_unchanged = 0
+       today_updated = 0
+       tomorrow_created = 0
        total_errors = 0
 
        for day in days:
@@ -44,31 +43,41 @@ class Command(BaseCommand):
                        # Get the risk level from the data
                        risk_level = data['data']['rcm']
                        
-                       # Check if there's an existing record for today's forecast
-                       existing_risk = FireRisk.objects.filter(
-                           concelho=concelho,
-                           forecast_day=day
-                       ).first()
-                       
-                       if existing_risk:
-                           # Check if the risk level has changed
-                           if existing_risk.risk_level != risk_level or existing_risk.model_run_date != model_run_date:
-                               # Update the existing record instead of creating a new one
-                               existing_risk.forecast_date = forecast_date
+                       if day == 0:  # Today's forecast - update existing
+                           # Check if there's an existing record for today's forecast
+                           existing_risk = FireRisk.objects.filter(
+                               concelho=concelho,
+                               forecast_day=day,
+                               forecast_date=forecast_date  # Make sure it's the same date
+                           ).first()
+                           
+                           if existing_risk:
+                               # Update today's forecast
                                existing_risk.model_run_date = model_run_date
                                existing_risk.update_date = update_date
                                existing_risk.risk_level = risk_level
                                existing_risk.save()
                                
-                               total_updated += 1
+                               today_updated += 1
                                self.stdout.write(
-                                   self.style.SUCCESS(f'Updated fire risk for concelho {concelho.name} (DICO: {dico_code}), day {day}')
+                                   self.style.SUCCESS(f'Updated today\'s fire risk for concelho {concelho.name} (DICO: {dico_code})')
                                )
                            else:
-                               # Data is the same, just note it's unchanged
-                               total_unchanged += 1
-                       else:
-                           # No existing record, create a new one
+                               # No existing record for today, create a new one
+                               FireRisk.objects.create(
+                                   concelho=concelho,
+                                   forecast_day=day,
+                                   forecast_date=forecast_date,
+                                   model_run_date=model_run_date,
+                                   update_date=update_date,
+                                   risk_level=risk_level
+                               )
+                               today_updated += 1
+                               self.stdout.write(
+                                   self.style.SUCCESS(f'Created today\'s fire risk for concelho {concelho.name} (DICO: {dico_code})')
+                               )
+                       else:  # Tomorrow's forecast - always create new
+                           # Always create a new record for tomorrow's forecast
                            FireRisk.objects.create(
                                concelho=concelho,
                                forecast_day=day,
@@ -77,9 +86,9 @@ class Command(BaseCommand):
                                update_date=update_date,
                                risk_level=risk_level
                            )
-                           total_created += 1
+                           tomorrow_created += 1
                            self.stdout.write(
-                               self.style.SUCCESS(f'Created new fire risk for concelho {concelho.name} (DICO: {dico_code}), day {day}')
+                               self.style.SUCCESS(f'Created tomorrow\'s fire risk for concelho {concelho.name} (DICO: {dico_code})')
                            )
                            
                    except Concelho.DoesNotExist:
@@ -111,9 +120,8 @@ class Command(BaseCommand):
        self.stdout.write(
            self.style.SUCCESS(
                f'Fire risk forecast processing completed:\n'
-               f'- New records created: {total_created}\n'
-               f'- Records updated: {total_updated}\n'
-               f'- Records unchanged: {total_unchanged}\n'
+               f'- Today\'s forecasts updated/created: {today_updated}\n'
+               f'- Tomorrow\'s forecasts created: {tomorrow_created}\n'
                f'- Errors: {total_errors}\n'
            )
        )

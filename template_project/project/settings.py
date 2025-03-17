@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     "api",
     "location",
     "climate",
-    "utils"
+    "utils",
+    "wildfires"
 ]
 
 MIDDLEWARE = [

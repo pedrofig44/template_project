@@ -21,19 +21,17 @@
             
             
                 
-            {% include 'components/searchable_dropdown.html' with 
-               dropdown_id="stationDropdown" 
-               button_class="btn-primary btn-sm dropdown-toggle" 
-               selected_item_name=selected_station.name|default:'Select Station' 
-               item_type="station" 
-               current_id=selected_station.station_id
-               results_id="station-search-results" 
-               spinner_id="station-search-spinner" 
-               base_url="climate:temperature_dashboard" 
-               query_param="station" 
-               extra_params="range="|add:time_range 
-               hx_target="#dashboard-content"
-            %}
+            <div class="dropdown d-inline-block ms-2">
+                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="stationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    {% if selected_station %}{{ selected_station.name }}{% else %}Select Station{% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="stationDropdown" style="max-height: 300px; overflow-y: auto;">
+                    {% for station in stations %}
+                    <li><a class="dropdown-item {% if selected_station.id == station.id %}active{% endif %}" href="?station={{ station.station_id }}&range={{ time_range }}">{{ station.name }}</a></li>
+                    {% empty %}
+                    <li><a class="dropdown-item disabled" href="#">No stations available</a></li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
     </div>

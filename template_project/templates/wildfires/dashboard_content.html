@@ -1,0 +1,453 @@
+<!-- wildfires/templates/wildfires/dashboard_content.html -->
+<!-- Current Year Summary Cards -->
+<div class="row mb-4">
+    <!-- Total Fires Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-light border-0 shadow h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-3 text-center">
+                        <i class="fa-solid fa-fire fa-3x text-danger"></i>
+                    </div>
+                    <div class="col-9">
+                        <div class="small text-secondary mb-1">Total Fires ({{ current_year }})</div>
+                        {% if current_year_data %}
+                        <div class="h2 mb-0">{{ current_year_data.total_fires }}</div>
+                        {% if prev_year_data %}
+                        <div class="small mt-2">
+                            {% if comparison.total_fires.value > 0 %}
+                            <i class="fa-solid fa-arrow-up text-danger"></i> +{{ comparison.total_fires.value }} (+{{ comparison.total_fires.percent|floatformat:1 }}%)
+                            {% elif comparison.total_fires.value < 0 %}
+                            <i class="fa-solid fa-arrow-down text-success"></i> {{ comparison.total_fires.value }} ({{ comparison.total_fires.percent|floatformat:1 }}%)
+                            {% else %}
+                            <i class="fa-solid fa-equals text-secondary"></i> No change
+                            {% endif %}
+                            <span class="text-muted">vs {{ current_year|add:"-1" }}</span>
+                        </div>
+                        {% endif %}
+                        {% else %}
+                        <div class="h2 mb-0">--</div>
+                        <div class="small text-muted mt-2">No data available</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Area Burned Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-light border-0 shadow h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-3 text-center">
+                        <i class="fa-solid fa-mountain fa-3x text-warning"></i>
+                    </div>
+                    <div class="col-9">
+                        <div class="small text-secondary mb-1">Total Area Burned ({{ current_year }})</div>
+                        {% if current_year_data %}
+                        <div class="h2 mb-0">{{ current_year_data.total_area_ha|floatformat:1 }} ha</div>
+                        {% if prev_year_data %}
+                        <div class="small mt-2">
+                            {% if comparison.total_area_ha.value > 0 %}
+                            <i class="fa-solid fa-arrow-up text-danger"></i> +{{ comparison.total_area_ha.value|floatformat:1 }} ha (+{{ comparison.total_area_ha.percent|floatformat:1 }}%)
+                            {% elif comparison.total_area_ha.value < 0 %}
+                            <i class="fa-solid fa-arrow-down text-success"></i> {{ comparison.total_area_ha.value|floatformat:1 }} ha ({{ comparison.total_area_ha.percent|floatformat:1 }}%)
+                            {% else %}
+                            <i class="fa-solid fa-equals text-secondary"></i> No change
+                            {% endif %}
+                            <span class="text-muted">vs {{ current_year|add:"-1" }}</span>
+                        </div>
+                        {% endif %}
+                        {% else %}
+                        <div class="h2 mb-0">-- ha</div>
+                        <div class="small text-muted mt-2">No data available</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Average Duration Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-light border-0 shadow h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-3 text-center">
+                        <i class="fa-solid fa-clock fa-3x text-info"></i>
+                    </div>
+                    <div class="col-9">
+                        <div class="small text-secondary mb-1">Average Fire Duration ({{ current_year }})</div>
+                        {% if current_year_data %}
+                        <div class="h2 mb-0">{{ current_year_data.avg_duration_hours|floatformat:1 }} h</div>
+                        {% if prev_year_data %}
+                        <div class="small mt-2">
+                            {% if comparison.avg_duration_hours.value > 0 %}
+                            <i class="fa-solid fa-arrow-up text-danger"></i> +{{ comparison.avg_duration_hours.value|floatformat:1 }} h (+{{ comparison.avg_duration_hours.percent|floatformat:1 }}%)
+                            {% elif comparison.avg_duration_hours.value < 0 %}
+                            <i class="fa-solid fa-arrow-down text-success"></i> {{ comparison.avg_duration_hours.value|floatformat:1 }} h ({{ comparison.avg_duration_hours.percent|floatformat:1 }}%)
+                            {% else %}
+                            <i class="fa-solid fa-equals text-secondary"></i> No change
+                            {% endif %}
+                            <span class="text-muted">vs {{ current_year|add:"-1" }}</span>
+                        </div>
+                        {% endif %}
+                        {% else %}
+                        <div class="h2 mb-0">-- h</div>
+                        <div class="small text-muted mt-2">No data available</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Max Fire Size Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-light border-0 shadow h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-3 text-center">
+                        <i class="fa-solid fa-expand fa-3x text-primary"></i>
+                    </div>
+                    <div class="col-9">
+                        <div class="small text-secondary mb-1">Largest Single Fire ({{ current_year }})</div>
+                        {% if current_year_data %}
+                        <div class="h2 mb-0">{{ current_year_data.max_fire_size_ha|floatformat:1 }} ha</div>
+                        {% if prev_year_data %}
+                        <div class="small mt-2">
+                            {% if comparison.max_fire_size_ha.value > 0 %}
+                            <i class="fa-solid fa-arrow-up text-danger"></i> +{{ comparison.max_fire_size_ha.value|floatformat:1 }} ha (+{{ comparison.max_fire_size_ha.percent|floatformat:1 }}%)
+                            {% elif comparison.max_fire_size_ha.value < 0 %}
+                            <i class="fa-solid fa-arrow-down text-success"></i> {{ comparison.max_fire_size_ha.value|floatformat:1 }} ha ({{ comparison.max_fire_size_ha.percent|floatformat:1 }}%)
+                            {% else %}
+                            <i class="fa-solid fa-equals text-secondary"></i> No change
+                            {% endif %}
+                            <span class="text-muted">vs {{ current_year|add:"-1" }}</span>
+                        </div>
+                        {% endif %}
+                        {% else %}
+                        <div class="h2 mb-0">-- ha</div>
+                        <div class="small text-muted mt-2">No data available</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <!-- Total Fires History -->
+    <div class="col-xl-4 mb-4">
+        <div class="card bg-light border-0 shadow">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="mb-0">Historical Fire Count</h5>
+            </div>
+            <div class="card-body">
+                {% if historical_charts.total_fires %}
+                <div id="chart-total-fires" style="width: 100%; height: 300px;"></div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const chartData = {{ historical_charts.total_fires|safe }};
+                        Plotly.newPlot('chart-total-fires', JSON.parse(chartData));
+                        
+                        // Apply night mode if active
+                        if (document.body.classList.contains('night-mode')) {
+                            Plotly.relayout('chart-total-fires', {
+                                'paper_bgcolor': '#1E1E1E',
+                                'plot_bgcolor': '#1E1E1E',
+                                'font.color': '#E0E0E0',
+                                'xaxis.gridcolor': '#444444',
+                                'yaxis.gridcolor': '#444444'
+                            });
+                        }
+                    });
+                </script>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fa-solid fa-chart-line fa-4x text-muted mb-3"></i>
+                    <p class="text-muted">No historical data available</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Total Area History -->
+    <div class="col-xl-4 mb-4">
+        <div class="card bg-light border-0 shadow">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="mb-0">Historical Burned Area</h5>
+            </div>
+            <div class="card-body">
+                {% if historical_charts.total_area %}
+                <div id="chart-total-area" style="width: 100%; height: 300px;"></div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const chartData = {{ historical_charts.total_area|safe }};
+                        Plotly.newPlot('chart-total-area', JSON.parse(chartData));
+                        
+                        // Apply night mode if active
+                        if (document.body.classList.contains('night-mode')) {
+                            Plotly.relayout('chart-total-area', {
+                                'paper_bgcolor': '#1E1E1E',
+                                'plot_bgcolor': '#1E1E1E',
+                                'font.color': '#E0E0E0',
+                                'xaxis.gridcolor': '#444444',
+                                'yaxis.gridcolor': '#444444'
+                            });
+                        }
+                    });
+                </script>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fa-solid fa-chart-line fa-4x text-muted mb-3"></i>
+                    <p class="text-muted">No historical data available</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Duration History -->
+    <div class="col-xl-4 mb-4">
+        <div class="card bg-light border-0 shadow">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="mb-0">Historical Fire Duration</h5>
+            </div>
+            <div class="card-body">
+                {% if historical_charts.avg_duration %}
+                <div id="chart-avg-duration" style="width: 100%; height: 300px;"></div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const chartData = {{ historical_charts.avg_duration|safe }};
+                        Plotly.newPlot('chart-avg-duration', JSON.parse(chartData));
+                        
+                        // Apply night mode if active
+                        if (document.body.classList.contains('night-mode')) {
+                            Plotly.relayout('chart-avg-duration', {
+                                'paper_bgcolor': '#1E1E1E',
+                                'plot_bgcolor': '#1E1E1E',
+                                'font.color': '#E0E0E0',
+                                'xaxis.gridcolor': '#444444',
+                                'yaxis.gridcolor': '#444444'
+                            });
+                        }
+                    });
+                </script>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fa-solid fa-chart-line fa-4x text-muted mb-3"></i>
+                    <p class="text-muted">No historical data available</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Burned Area Breakdown by Type -->
+{% if current_year_data %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light border-0 shadow">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="mb-0">Burned Area Breakdown by Type ({{ current_year }})</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div id="chart-area-breakdown" style="width: 100%; height: 300px;"></div>
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                var data = [{
+                                    values: [
+                                        {{ current_year_data.forest_area_ha }}, 
+                                        {{ current_year_data.shrub_area_ha }}, 
+                                        {{ current_year_data.agric_area_ha }}
+                                    ],
+                                    labels: ['Forest', 'Shrubland', 'Agricultural'],
+                                    type: 'pie',
+                                    marker: {
+                                        colors: ['#2E7D32', '#8BC34A', '#FFC107']
+                                    }
+                                }];
+                                
+                                var layout = {
+                                    title: 'Burned Area Types Distribution',
+                                    paper_bgcolor: '#F3F6F9',
+                                    plot_bgcolor: '#F3F6F9',
+                                    font: { color: '#000000' }
+                                };
+                                
+                                Plotly.newPlot('chart-area-breakdown', data, layout);
+                                
+                                // Apply night mode if active
+                                if (document.body.classList.contains('night-mode')) {
+                                    Plotly.relayout('chart-area-breakdown', {
+                                        'paper_bgcolor': '#1E1E1E',
+                                        'plot_bgcolor': '#1E1E1E',
+                                        'font.color': '#E0E0E0'
+                                    });
+                                }
+                            });
+                        </script>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="h-100 d-flex flex-column justify-content-center">
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Forest Area</span>
+                                    <span>{{ current_year_data.forest_area_ha|floatformat:1 }} ha</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {% widthratio current_year_data.forest_area_ha current_year_data.total_area_ha 100 %}%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Shrubland Area</span>
+                                    <span>{{ current_year_data.shrub_area_ha|floatformat:1 }} ha</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="background-color: #8BC34A !important; width: {% widthratio current_year_data.shrub_area_ha current_year_data.total_area_ha 100 %}%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Agricultural Area</span>
+                                    <span>{{ current_year_data.agric_area_ha|floatformat:1 }} ha</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-warning" role="progressbar" 
+                                         style="width: {% widthratio current_year_data.agric_area_ha current_year_data.total_area_ha 100 %}%"></div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-bold">Total Natural Area</span>
+                                    <span class="fw-bold">{{ current_year_data.total_natural_area_ha|floatformat:1 }} ha</span>
+                                </div>
+                                <div class="small text-muted">Sum of forest and shrubland areas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- National vs Local Comparison -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light border-0 shadow">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="mb-0">{{ selected_concelho.name }} vs. National Trends</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th colspan="2">Total Fires</th>
+                                <th colspan="2">Total Area (ha)</th>
+                                <th colspan="2">Avg Duration (h)</th>
+                            </tr>
+                            <tr class="table-light">
+                                <th></th>
+                                <th>National</th>
+                                <th>{{ selected_concelho.name }}</th>
+                                <th>National</th>
+                                <th>{{ selected_concelho.name }}</th>
+                                <th>National</th>
+                                <th>{{ selected_concelho.name }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for year, totals in nationwide_stats.items %}
+                            <tr {% if year == current_year %}class="table-active"{% endif %}>
+                                <td><strong>{{ year }}</strong></td>
+                                <td>{{ totals.total_fires|default:"-" }}</td>
+                                <td>
+                                    {% with year_data=yearly_data|dictsortreversed:"year"|first %}
+                                    {% if year_data.year == year %}{{ year_data.total_fires }}{% else %}-{% endif %}
+                                    {% endwith %}
+                                </td>
+                                <td>{{ totals.total_area|default:"-"|floatformat:1 }}</td>
+                                <td>
+                                    {% with year_data=yearly_data|dictsortreversed:"year"|first %}
+                                    {% if year_data.year == year %}{{ year_data.total_area_ha|floatformat:1 }}{% else %}-{% endif %}
+                                    {% endwith %}
+                                </td>
+                                <td>{{ totals.avg_duration|default:"-"|floatformat:1 }}</td>
+                                <td>
+                                    {% with year_data=yearly_data|dictsortreversed:"year"|first %}
+                                    {% if year_data.year == year %}{{ year_data.avg_duration_hours|floatformat:1 }}{% else %}-{% endif %}
+                                    {% endwith %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Historical Data Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-light border-0 shadow">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Yearly Wildfire Statistics for {{ selected_concelho.name }}</h5>
+                <button class="btn btn-sm btn-outline-primary">Export Data</button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th>Total Fires</th>
+                                <th>Total Area (ha)</th>
+                                <th>Forest Area (ha)</th>
+                                <th>Shrubland (ha)</th>
+                                <th>Agricultural (ha)</th>
+                                <th>Avg Duration (h)</th>
+                                <th>Fires >24h</th>
+                                <th>Max Fire (ha)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in yearly_data %}
+                            <tr {% if data.year == current_year %}class="table-active"{% endif %}>
+                                <td><strong>{{ data.year }}</strong></td>
+                                <td>{{ data.total_fires }}</td>
+                                <td>{{ data.total_area_ha|floatformat:1 }}</td>
+                                <td>{{ data.forest_area_ha|floatformat:1 }}</td>
+                                <td>{{ data.shrub_area_ha|floatformat:1 }}</td>
+                                <td>{{ data.agric_area_ha|floatformat:1 }}</td>
+                                <td>{{ data.avg_duration_hours|floatformat:1 }}</td>
+                                <td>{{ data.fires_over_24h }}</td>
+                                <td>{{ data.max_fire_size_ha|floatformat:1 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center">No historical data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
