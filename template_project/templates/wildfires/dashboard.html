@@ -13,19 +13,26 @@
             </h2>
         </div>
         <div class="col-md-6 text-end">
-            <!-- Concelho dropdown with HTMX -->
-            {% include 'components/searchable_dropdown.html' with 
-               dropdown_id="concelhoDropdown" 
-               button_class="btn-primary dropdown-toggle" 
-               selected_item_name=selected_concelho.name|default:'Select Concelho' 
-               item_type="concelho" 
-               current_id=selected_concelho.dico_code
-               results_id="concelho-search-results" 
-               spinner_id="concelho-search-spinner" 
-               base_url="wildfires:dashboard" 
-               query_param="concelho" 
-               hx_target="#dashboard-content"
-            %}
+            <!-- Simple dropdown for concelho selection -->
+            <div class="dropdown d-inline-block">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="concelhoDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    {% if selected_concelho %}{{ selected_concelho.name }}{% else %}Select Concelho{% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="concelhoDropdown" style="max-height: 300px; overflow-y: auto;">
+                    {% for concelho in all_concelhos %}
+                    <li><a class="dropdown-item {% if selected_concelho.dico_code == concelho.dico_code %}active{% endif %}" 
+                          href="{% url 'wildfires:dashboard' %}?concelho={{ concelho.dico_code }}"
+                          hx-get="{% url 'wildfires:dashboard' %}?concelho={{ concelho.dico_code }}"
+                          hx-target="#dashboard-content"
+                          hx-swap="innerHTML"
+                          hx-trigger="click">
+                        {{ concelho.name }}
+                    </a></li>
+                    {% empty %}
+                    <li><a class="dropdown-item disabled" href="#">No concelhos available</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
     </div>
 

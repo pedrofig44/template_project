@@ -13,7 +13,9 @@ def wildfire_dashboard(request):
     Wildfire dashboard view showing yearly wildfire statistics by concelho
     """
     # Get the current year
-    current_year = timezone.now().year
+    # current_year = timezone.now().year
+    # Use 2023 as default year since there's no data for 2024/2025
+    current_year = 2023
     
     # Get selected concelho or default to first concelho with data
     concelho_id = request.GET.get('concelho')
@@ -94,31 +96,36 @@ def wildfire_dashboard(request):
         # Generate charts
         if not df.is_empty():
             # Total fires over years chart
+            # Total fires over years chart
             fires_df = df.select(['year', 'total_fires']).rename({'year': 'timestamp', 'total_fires': df.columns[1]})
-            historical_charts['total_fires'] = generate_line_chart(
-                df_pl=fires_df,
+            fires_chart = generate_line_chart(
+                df=fires_df,
                 title=f"Total Fires in {selected_concelho.name} by Year",
                 x_axis="Year",
                 y_axis="Number of Fires"
             )
+            # Ensure we're not double-encoding JSON
+            historical_charts['total_fires'] = fires_chart
             
             # Total area burned over years chart
             area_df = df.select(['year', 'total_area_ha']).rename({'year': 'timestamp', 'total_area_ha': df.columns[1]})
-            historical_charts['total_area'] = generate_line_chart(
-                df_pl=area_df,
+            area_chart = generate_line_chart(
+                df=area_df,
                 title=f"Total Area Burned in {selected_concelho.name} by Year",
                 x_axis="Year",
                 y_axis="Area (ha)"
             )
+            historical_charts['total_area'] = area_chart
             
             # Fire duration over years chart
             duration_df = df.select(['year', 'avg_duration_hours']).rename({'year': 'timestamp', 'avg_duration_hours': df.columns[1]})
-            historical_charts['avg_duration'] = generate_line_chart(
-                df_pl=duration_df,
+            duration_chart = generate_line_chart(
+                df=duration_df,
                 title=f"Average Fire Duration in {selected_concelho.name} by Year",
                 x_axis="Year",
                 y_axis="Duration (hours)"
             )
+            historical_charts['avg_duration'] = duration_chart
     
     # Get nationwide totals for comparison
     nationwide_stats = {}
