@@ -44,35 +44,70 @@
 
 <!-- Script for updating charts on night mode toggle -->
 <script>
-// Apply night mode to charts when toggled
-document.addEventListener('nightModeToggled', function() {
-    if (document.body.classList.contains('night-mode')) {
-        // Update charts for night mode if they exist
-        if (typeof Plotly !== 'undefined') {
-            document.querySelectorAll('[id^="chart-"]').forEach(function(chart) {
-                Plotly.relayout(chart.id, {
-                    'paper_bgcolor': '#1E1E1E',
-                    'plot_bgcolor': '#1E1E1E',
-                    'font.color': '#E0E0E0',
-                    'xaxis.gridcolor': '#444444',
-                    'yaxis.gridcolor': '#444444'
-                });
-            });
+    // Function to initialize all charts on the page
+    function initializeCharts() {
+        // Total Fires Chart
+        if (document.getElementById('chart-total-fires') && typeof totalFiresData !== 'undefined') {
+            Plotly.newPlot('chart-total-fires', totalFiresData.data, totalFiresData.layout);
         }
-    } else {
-        // Revert to day mode
-        if (typeof Plotly !== 'undefined') {
-            document.querySelectorAll('[id^="chart-"]').forEach(function(chart) {
-                Plotly.relayout(chart.id, {
-                    'paper_bgcolor': '#F3F6F9',
-                    'plot_bgcolor': '#F3F6F9',
-                    'font.color': '#000000',
-                    'xaxis.gridcolor': '#E0E0E0',
-                    'yaxis.gridcolor': '#E0E0E0'
-                });
-            });
+        
+        // Total Area Chart
+        if (document.getElementById('chart-total-area') && typeof totalAreaData !== 'undefined') {
+            Plotly.newPlot('chart-total-area', totalAreaData.data, totalAreaData.layout);
+        }
+        
+        // Average Duration Chart
+        if (document.getElementById('chart-avg-duration') && typeof avgDurationData !== 'undefined') {
+            Plotly.newPlot('chart-avg-duration', avgDurationData.data, avgDurationData.layout);
+        }
+        
+        // Area Breakdown Pie Chart
+        if (document.getElementById('chart-area-breakdown') && typeof areaBreakdownData !== 'undefined') {
+            Plotly.newPlot('chart-area-breakdown', areaBreakdownData, areaBreakdownLayout);
+        }
+        
+        // Apply night mode styling if active
+        applyChartNightMode();
+    }
+    
+    // Function to apply night mode to all charts
+    function applyChartNightMode() {
+        if (document.body.classList.contains('night-mode')) {
+            const darkStyle = {
+                'paper_bgcolor': '#1E1E1E',
+                'plot_bgcolor': '#1E1E1E',
+                'font.color': '#E0E0E0',
+                'xaxis.gridcolor': '#444444',
+                'yaxis.gridcolor': '#444444'
+            };
+            
+            if (document.getElementById('chart-total-fires')) {
+                Plotly.relayout('chart-total-fires', darkStyle);
+            }
+            if (document.getElementById('chart-total-area')) {
+                Plotly.relayout('chart-total-area', darkStyle);
+            }
+            if (document.getElementById('chart-avg-duration')) {
+                Plotly.relayout('chart-avg-duration', darkStyle);
+            }
+            if (document.getElementById('chart-area-breakdown')) {
+                Plotly.relayout('chart-area-breakdown', darkStyle);
+            }
         }
     }
-});
+    
+    // Initialize charts when the page first loads
+    document.addEventListener('DOMContentLoaded', initializeCharts);
+    
+    // Re-initialize charts after HTMX content swap
+    document.addEventListener('htmx:afterSwap', function(event) {
+        if (event.detail.target.id === 'dashboard-content') {
+            // Small timeout to ensure DOM is fully updated
+            setTimeout(initializeCharts, 50);
+        }
+    });
+    
+    // Apply night mode on toggle
+    document.addEventListener('nightModeToggled', applyChartNightMode);
 </script>
 {% endblock %}

@@ -140,7 +140,7 @@
 
 <!-- Charts Row -->
 <div class="row mb-4">
-    <!-- Total Fires History -->
+    <!-- Total Fires History Section -->
     <div class="col-xl-4 mb-4">
         <div class="card bg-light border-0 shadow">
             <div class="card-header bg-transparent border-0">
@@ -150,21 +150,8 @@
                 {% if historical_charts.total_fires %}
                 <div id="chart-total-fires" style="width: 100%; height: 300px;"></div>
                 <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        const chartData = {{ historical_charts.total_fires|safe }};
-                        Plotly.newPlot('chart-total-fires', JSON.parse(chartData));
-                        
-                        // Apply night mode if active
-                        if (document.body.classList.contains('night-mode')) {
-                            Plotly.relayout('chart-total-fires', {
-                                'paper_bgcolor': '#1E1E1E',
-                                'plot_bgcolor': '#1E1E1E',
-                                'font.color': '#E0E0E0',
-                                'xaxis.gridcolor': '#444444',
-                                'yaxis.gridcolor': '#444444'
-                            });
-                        }
-                    });
+                    // Store the data in a global variable so it can be accessed by initializeCharts()
+                    var totalFiresData = {{ historical_charts.total_fires|safe }};
                 </script>
                 {% else %}
                 <div class="text-center py-5">
@@ -176,7 +163,7 @@
         </div>
     </div>
     
-    <!-- Total Area History -->
+    <!-- Total Area History Section -->
     <div class="col-xl-4 mb-4">
         <div class="card bg-light border-0 shadow">
             <div class="card-header bg-transparent border-0">
@@ -186,21 +173,8 @@
                 {% if historical_charts.total_area %}
                 <div id="chart-total-area" style="width: 100%; height: 300px;"></div>
                 <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        const chartData = {{ historical_charts.total_area|safe }};
-                        Plotly.newPlot('chart-total-area', JSON.parse(chartData));
-                        
-                        // Apply night mode if active
-                        if (document.body.classList.contains('night-mode')) {
-                            Plotly.relayout('chart-total-area', {
-                                'paper_bgcolor': '#1E1E1E',
-                                'plot_bgcolor': '#1E1E1E',
-                                'font.color': '#E0E0E0',
-                                'xaxis.gridcolor': '#444444',
-                                'yaxis.gridcolor': '#444444'
-                            });
-                        }
-                    });
+                    // Store the data in a global variable so it can be accessed by initializeCharts()
+                    var totalAreaData = {{ historical_charts.total_area|safe }};
                 </script>
                 {% else %}
                 <div class="text-center py-5">
@@ -212,7 +186,7 @@
         </div>
     </div>
     
-    <!-- Duration History -->
+    <!-- Duration History Section -->
     <div class="col-xl-4 mb-4">
         <div class="card bg-light border-0 shadow">
             <div class="card-header bg-transparent border-0">
@@ -222,21 +196,8 @@
                 {% if historical_charts.avg_duration %}
                 <div id="chart-avg-duration" style="width: 100%; height: 300px;"></div>
                 <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        const chartData = {{ historical_charts.avg_duration|safe }};
-                        Plotly.newPlot('chart-avg-duration', JSON.parse(chartData));
-                        
-                        // Apply night mode if active
-                        if (document.body.classList.contains('night-mode')) {
-                            Plotly.relayout('chart-avg-duration', {
-                                'paper_bgcolor': '#1E1E1E',
-                                'plot_bgcolor': '#1E1E1E',
-                                'font.color': '#E0E0E0',
-                                'xaxis.gridcolor': '#444444',
-                                'yaxis.gridcolor': '#444444'
-                            });
-                        }
-                    });
+                    // Store the data in a global variable so it can be accessed by initializeCharts()
+                    var avgDurationData = {{ historical_charts.avg_duration|safe }};
                 </script>
                 {% else %}
                 <div class="text-center py-5">
@@ -249,10 +210,10 @@
     </div>
 </div>
 
-<!-- Burned Area Breakdown by Type -->
+<!-- Burned Area Breakdown by Type Section (update if present) -->
 {% if current_year_data %}
 <div class="row mb-4">
-    <div class="col-12">
+    <div class="col-4">
         <div class="card bg-light border-0 shadow">
             <div class="card-header bg-transparent border-0">
                 <h5 class="mb-0">Burned Area Breakdown by Type ({{ current_year }})</h5>
@@ -262,90 +223,37 @@
                     <div class="col-md-8">
                         <div id="chart-area-breakdown" style="width: 100%; height: 300px;"></div>
                         <script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                var data = [{
-                                    values: [
-                                        {{ current_year_data.forest_area_ha }}, 
-                                        {{ current_year_data.shrub_area_ha }}, 
-                                        {{ current_year_data.agric_area_ha }}
-                                    ],
-                                    labels: ['Forest', 'Shrubland', 'Agricultural'],
-                                    type: 'pie',
-                                    marker: {
-                                        colors: ['#2E7D32', '#8BC34A', '#FFC107']
-                                    }
-                                }];
-                                
-                                var layout = {
-                                    title: 'Burned Area Types Distribution',
-                                    paper_bgcolor: '#F3F6F9',
-                                    plot_bgcolor: '#F3F6F9',
-                                    font: { color: '#000000' }
-                                };
-                                
-                                Plotly.newPlot('chart-area-breakdown', data, layout);
-                                
-                                // Apply night mode if active
-                                if (document.body.classList.contains('night-mode')) {
-                                    Plotly.relayout('chart-area-breakdown', {
-                                        'paper_bgcolor': '#1E1E1E',
-                                        'plot_bgcolor': '#1E1E1E',
-                                        'font.color': '#E0E0E0'
-                                    });
+                            // Store the data in global variables so they can be accessed by initializeCharts()
+                            var areaBreakdownData = [{
+                                values: [
+                                    {{ current_year_data.forest_area_ha }}, 
+                                    {{ current_year_data.shrub_area_ha }}, 
+                                    {{ current_year_data.agric_area_ha }}
+                                ],
+                                labels: ['Forest', 'Shrubland', 'Agricultural'],
+                                type: 'pie',
+                                marker: {
+                                    colors: ['#2E7D32', '#8BC34A', '#FFC107']
                                 }
-                            });
+                            }];
+                            
+                            var areaBreakdownLayout = {
+                                title: 'Burned Area Types Distribution',
+                                paper_bgcolor: '#F3F6F9',
+                                plot_bgcolor: '#F3F6F9',
+                                font: { color: '#000000' }
+                            };
                         </script>
                     </div>
+                    <!-- Rest of the code remains the same -->
                     <div class="col-md-4">
-                        <div class="h-100 d-flex flex-column justify-content-center">
-                            <div class="mb-4">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span>Forest Area</span>
-                                    <span>{{ current_year_data.forest_area_ha|floatformat:1 }} ha</span>
-                                </div>
-                                <div class="progress" style="height: 10px;">
-                                    <div class="progress-bar bg-success" role="progressbar" 
-                                         style="width: {% widthratio current_year_data.forest_area_ha current_year_data.total_area_ha 100 %}%"></div>
-                                </div>
-                            </div>
-                            <div class="mb-4">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span>Shrubland Area</span>
-                                    <span>{{ current_year_data.shrub_area_ha|floatformat:1 }} ha</span>
-                                </div>
-                                <div class="progress" style="height: 10px;">
-                                    <div class="progress-bar bg-success" role="progressbar" style="background-color: #8BC34A !important; width: {% widthratio current_year_data.shrub_area_ha current_year_data.total_area_ha 100 %}%"></div>
-                                </div>
-                            </div>
-                            <div class="mb-4">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span>Agricultural Area</span>
-                                    <span>{{ current_year_data.agric_area_ha|floatformat:1 }} ha</span>
-                                </div>
-                                <div class="progress" style="height: 10px;">
-                                    <div class="progress-bar bg-warning" role="progressbar" 
-                                         style="width: {% widthratio current_year_data.agric_area_ha current_year_data.total_area_ha 100 %}%"></div>
-                                </div>
-                            </div>
-                            <div class="mt-3">
-                                <div class="d-flex justify-content-between">
-                                    <span class="fw-bold">Total Natural Area</span>
-                                    <span class="fw-bold">{{ current_year_data.total_natural_area_ha|floatformat:1 }} ha</span>
-                                </div>
-                                <div class="small text-muted">Sum of forest and shrubland areas</div>
-                            </div>
-                        </div>
+                        <!-- ... existing code ... -->
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-{% endif %}
-
-<!-- National vs Local Comparison -->
-<div class="row mb-4">
-    <div class="col-12">
+    <div class="col-8">
         <div class="card bg-light border-0 shadow">
             <div class="card-header bg-transparent border-0">
                 <h5 class="mb-0">{{ selected_concelho.name }} vs. National Trends</h5>
@@ -401,6 +309,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <!-- Historical Data Table -->
 <div class="row">

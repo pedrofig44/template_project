@@ -45,10 +45,11 @@ class Command(BaseCommand):
                        
                        if day == 0:  # Today's forecast - update existing
                            # Check if there's an existing record for today's forecast
+                           # Important: Match on forecast_date to avoid updating historical records
                            existing_risk = FireRisk.objects.filter(
                                concelho=concelho,
                                forecast_day=day,
-                               forecast_date=forecast_date  # Make sure it's the same date
+                               forecast_date=forecast_date  # Must match the exact forecast date
                            ).first()
                            
                            if existing_risk:
