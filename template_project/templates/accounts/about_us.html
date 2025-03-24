@@ -1,0 +1,199 @@
+{% extends 'includes/base.html' %}
+{% load static %}
+
+
+{% block content %}
+
+<body>
+
+  <main>
+    
+    <div class="section pt-0">
+      <div class="container mt-n10 mt-lg-n12 z-2">
+        <div class="row justify-content-center">
+          <div class="col-12">
+            <div class="card bg-white shadow-soft text-primary rounded mb-4">
+              <div class="px-3 px-lg-4 py-5">
+                <div class="row">
+                  <div class="col-md-8">
+                    <h3 class="fw-bold text-primary mb-4">Sistema Inteligente de Monitorização de Fenómenos Climáticos</h3>
+                    
+                    <p class="lead">O EcoSentinel é um sistema avançado de monitorização e previsão de fenómenos climáticos, especialmente focado na prevenção e detecção de incêndios florestais.</p>
+                    
+                    <p>O nosso sistema combina dados em tempo real de sensores, imagens de satélite, e previsões meteorológicas com algoritmos de inteligência artificial para fornecer análises precisas e alertas oportunos.</p>
+                    
+                    <h4 class="fw-bold text-primary mt-5 mb-3">Nossa Missão</h4>
+                    <p>Proteger o meio ambiente e as comunidades através da tecnologia, oferecendo ferramentas que permitem:</p>
+                    <ul>
+                      <li>Monitorização contínua de condições ambientais</li>
+                      <li>Análise preditiva de riscos climáticos</li>
+                      <li>Alertas antecipados para prevenção de incêndios</li>
+                      <li>Suporte à tomada de decisões para entidades governamentais e de resposta a emergências</li>
+                    </ul>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="text-center mb-4">
+                      <img src="{% static 'assets/img/favicon/android-chrome-512x512.png' %}" alt="EcoSentinel Logo" class="img-fluid rounded mb-4" style="max-width: 200px;">
+                    </div>
+                    
+                    <div class="card bg-light mb-4">
+                      <div class="card-header">
+                        <h5 class="mb-0 fw-bold text-primary">Contato</h5>
+                      </div>
+                      <div class="card-body">
+                        <p><i class="fa fa-envelope me-2"></i> info@ecosentinel.com</p>
+                        <p><i class="fa fa-phone me-2"></i> +351 123 456 789</p>
+                        <p><i class="fa fa-map-marker-alt me-2"></i> Lisboa, Portugal</p>
+                      </div>
+                    </div>
+                    
+                    <div class="card bg-primary text-white">
+                      <div class="card-body">
+                        <h5 class="fw-bold">Parceiros</h5>
+                        <div class="mt-3 mb-2">
+                          <img src="{% static 'assets/img/axians_logo_bottom.png' %}" alt="Axians" class="img-fluid bg-white p-2 rounded" style="max-height: 60px;">
+                        </div>
+                        <p class="small mt-3">O EcoSentinel é desenvolvido pela Axians Solutions, em parceria com autoridades ambientais e instituições de pesquisa.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <section class="section section-lg bg-gray-800 text-white mb-5">
+      <div class="container">
+        <div class="row justify-content-center mb-5 mb-lg-6">
+          <div class="col-12 text-center">
+            <h2 class="h1 px-lg-5">Em Sintonia com os ODS</h2>
+            <p class="lead px-lg-8">O EcoSentinel valoriza os objetivos de desenvolvimento sustentável e quer apoiar Portugal a alcançar as metas propostas.</p>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card card-index bg-orange shadow-soft text-primary rounded mb-4">
+              <div class="card-content-center px-3 px-lg-4 py-5 text-center">
+                <i class="fa-solid fa-industry fa-3x mb-3"></i>
+                <h5 class="fw-bold text-primary">9 - Indústria, Inovação e Infraestruturas</h5>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card card-index bg-yellow shadow-soft text-primary rounded mb-4">
+              <div class="card-content-center px-3 px-lg-4 py-5 text-center">
+                <i class="fa-solid fa-tree-city fa-3x mb-3" ></i>
+                <h5 class="fw-bold text-primary">11 - Cidades e Comunidades Sustentáveis</h5>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card card-index bg-blue shadow-soft text-primary rounded mb-4">
+              <div class="card-content-center px-3 px-lg-4 py-5 text-center">
+                <i class="fa-solid fa-earth-europe fa-3x mb-3"></i>
+                <h5 class="fw-bold text-primary">13 - Ação Climática</h5>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card card-index bg-green shadow-soft text-primary rounded mb-4">
+              <div class="card-content-center px-3 px-lg-4 py-5 text-center">
+                <i class="fa-solid fa-tree fa-3x mb-3"></i>
+                <h5 class="fw-bold text-primary">15 - Proteger a Vida Terrestre</h5>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+  </main>
+
+  <!---->
+  <footer class="footer py-6 bg-gray-800 text-white">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4">
+          <img class="navbar-brand-dark mb-4" height="35" src="" alt="">
+          <p>EcoSentinel é um sistema de monitorização de fenómenos climáticos, que permite apoio à tomada de decisão das entidades de resposta.</p>
+          <ul class="social-buttons mb-5 mb-lg-0">
+            <li>
+              <a href="https://twitter.com" aria-label="twitter social link" class="icon-white me-2">
+                <span class="fab fa-twitter"></span>
+              </a>
+            </li>
+            <li>
+              <a href="https://facebook.com" class="icon-white me-2" aria-label="facebook social link">
+                <span class="fab fa-facebook"></span>
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com" aria-label="github social link" class="icon-white me-2">
+                <span class="fab fa-github"></span>
+              </a>
+            </li>
+            <li>
+              <a href="https://dribbble.com" class="icon-white" aria-label="dribbble social link">
+                <span class="fab fa-dribbble"></span>
+              </a>
+            </li>
+          </ul>
+        </div>
+        <div class="col-6 col-md-2 mb-5 mb-lg-0">
+          <span class="h5">Axians</span>
+          <ul class="links-vertical mt-2">
+            <li><a target="_blank" href="https://www.axians.pt/">Site</a></li>
+            <li><a target="_blank" href="https://www.axians.pt/dashboard-as-a-service/">Produtos</a></li>
+            <li><a target="_blank" href="https://www.axians.pt/about-axians/">Sobre Nós</a></li>
+            <li><a target="_blank" href="https://www.axians.pt/contacts/">Contactos</a></li>
+          </ul>
+        </div>
+        <div class="col-6 col-md-2 mb-5 mb-lg-0">
+          <span class="h5">Other</span>
+          <ul class="links-vertical mt-2">
+            <li><a href="#" target="_blank">Docs
+                <span class="badge badge-sm bg-secondary text-dark ms-2">v1.4</span></a></li>
+            <li><a href="#" target="_blank">Changelog</a></li>
+            <li><a target="_blank" href="#">License</a></li>
+            <li><a target="_blank" href="#">Support</a></li>
+          </ul>
+        </div>
+        <div class="col-12 col-md-4 mb-5 mb-lg-0">
+          <span class="h5 mb-3 d-block">Subscribe</span>
+          <form action="#">
+            <div class="form-row mb-2">
+              <div class="col-12">
+                <input type="email" class="form-control mb-2" placeholder="example@company.com" name="email"
+                  aria-label="Subscribe form" required>
+              </div>
+              <div class="col-12 d-grid">
+                <button type="submit" class="btn btn-secondary" data-loading-text="Sending">
+                  <span>Subscribe</span>
+                </button>
+              </div>
+            </div>
+          </form>
+          <p class="text-muted font-small m-0">We'll never share your details. See our <a class="text-white"
+              href="#">Privacy Policy</a></p>
+        </div>
+      </div>
+      <hr class="bg-gray-700 my-5">
+      <div class="row">
+        <div class="col mb-md-0">
+          <a href="#" class="d-flex justify-content-center">
+            <img src="{% static 'assets/img/axians_logo_bottom.png' %}" height="55" class="mb-4" alt="">
+          </a>
+          <div class="d-flex text-center justify-content-center align-items-center" role="contentinfo">
+            <p class="fw-normal font-small mb-0">
+              &copy; EcoSentinel - Axians Solutions.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+{% endblock %}
