@@ -1,0 +1,545 @@
+{% extends 'includes/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid pt-4 px-4">
+    <!-- Dashboard Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="text-start">
+                Wind Dashboard
+                <span class="fs-6 text-muted ms-2">{{ time_label }}</span>
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="btn-group">
+                <a href="?station={{ selected_station.station_id }}&range=24h" class="btn btn-sm {% if time_range == '24h' %}btn-primary{% else %}btn-outline-primary{% endif %}">24h</a>
+                <a href="?station={{ selected_station.station_id }}&range=48h" class="btn btn-sm {% if time_range == '48h' %}btn-primary{% else %}btn-outline-primary{% endif %}">48h</a>
+                <a href="?station={{ selected_station.station_id }}&range=7d" class="btn btn-sm {% if time_range == '7d' %}btn-primary{% else %}btn-outline-primary{% endif %}">7d</a>
+                <a href="?station={{ selected_station.station_id }}&range=30d" class="btn btn-sm {% if time_range == '30d' %}btn-primary{% else %}btn-outline-primary{% endif %}">30d</a>
+            </div>
+            
+            <!-- Station Selector -->
+            <div class="dropdown d-inline-block ms-2">
+                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="stationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    {% if selected_station %}{{ selected_station.name }}{% else %}Select Station{% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="stationDropdown" style="max-height: 300px; overflow-y: auto;">
+                    {% for station in stations %}
+                    <li><a class="dropdown-item {% if selected_station.id == station.id %}active{% endif %}" href="?station={{ station.station_id }}&range={{ time_range }}">{{ station.name }}</a></li>
+                    {% empty %}
+                    <li><a class="dropdown-item disabled" href="#">No stations available</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    {% if selected_station %}
+    <!-- Wind Overview Cards -->
+    <div class="row mb-4">
+        <!-- Current Wind Speed Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fa-solid fa-wind fa-3x text-primary"></i>
+                        </div>
+                        <div class="col-9">
+                            <div class="small text-secondary mb-1">Current Wind Speed</div>
+                            {% if stats.current_speed %}
+                            <div class="h2 mb-0">{{ stats.current_speed }} km/h</div>
+                            {% if stats.wind_trend %}
+                            <div class="small mt-2">
+                                {% if stats.wind_trend == 'increasing' %}
+                                <i class="fa-solid fa-arrow-trend-up text-danger"></i> Rising (+{{ stats.wind_diff }} km/h)
+                                {% elif stats.wind_trend == 'decreasing' %}
+                                <i class="fa-solid fa-arrow-trend-down text-primary"></i> Falling ({{ stats.wind_diff }} km/h)
+                                {% else %}
+                                <i class="fa-solid fa-arrow-right text-secondary"></i> Stable
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <div class="h2 mb-0">-- km/h</div>
+                            <div class="small text-muted mt-2">No data available</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wind Direction Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fa-solid fa-compass fa-3x text-info"></i>
+                        </div>
+                        <div class="col-9">
+                            <div class="small text-secondary mb-1">Wind Direction</div>
+                            {% if stats.direction_text %}
+                            <div class="h2 mb-0">{{ stats.direction_text }}</div>
+                            <div class="small text-muted mt-2">
+                                Direction code: {{ stats.current_direction }}
+                            </div>
+                            {% else %}
+                            <div class="h2 mb-0">--</div>
+                            <div class="small text-muted mt-2">No data available</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Maximum Wind Speed Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fa-solid fa-gauge-high fa-3x text-danger"></i>
+                        </div>
+                        <div class="col-9">
+                            <div class="small text-secondary mb-1">Maximum Wind Speed</div>
+                            {% if stats.max_speed %}
+                            <div class="h2 mb-0">{{ stats.max_speed }} km/h</div>
+                            <div class="small text-muted mt-2">{{ time_label }}</div>
+                            {% else %}
+                            <div class="h2 mb-0">-- km/h</div>
+                            <div class="small text-muted mt-2">No data available</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Wind Speed Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fa-solid fa-chart-line fa-3x text-success"></i>
+                        </div>
+                        <div class="col-9">
+                            <div class="small text-secondary mb-1">Average Wind Speed</div>
+                            {% if stats.avg_speed %}
+                            <div class="h2 mb-0">{{ stats.avg_speed }} km/h</div>
+                            <div class="small text-muted mt-2">{{ time_label }}</div>
+                            {% else %}
+                            <div class="h2 mb-0">-- km/h</div>
+                            <div class="small text-muted mt-2">No data available</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wind Speed Chart and Wind Rose Section -->
+    <div class="row mb-4">
+        <!-- Wind Speed Chart -->
+        <div class="col-xl-8 mb-4">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header d-flex justify-content-between align-items-center bg-transparent border-0">
+                    <h5 class="mb-0">Wind Speed Trend for {{ selected_station.name }}</h5>
+                    <a href="{% url 'climate:station_wind_detail' selected_station.station_id %}?range={{ time_range }}" class="btn btn-sm btn-outline-primary">View Details</a>
+                </div>
+                <div class="card-body">
+                    {% if wind_data %}
+                    <div id="wind-chart" style="width: 100%; height: 400px;"></div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fa-solid fa-chart-line fa-4x text-muted mb-3"></i>
+                        <h5>No Wind Data Available</h5>
+                        <p class="text-muted">No readings available for the selected time period.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Wind Rose Chart -->
+        <div class="col-xl-4 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Wind Direction Distribution</h5>
+                </div>
+                <div class="card-body">
+                    {% if wind_rose_data %}
+                    <div id="wind-rose-chart" style="width: 100%; height: 400px;"></div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fa-solid fa-compass fa-4x text-muted mb-3"></i>
+                        <h5>No Wind Direction Data</h5>
+                        <p class="text-muted">No direction data available for the selected period.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Beaufort Scale Reference -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Beaufort Wind Scale Reference</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Force</th>
+                                    <th>Description</th>
+                                    <th>Wind Speed (km/h)</th>
+                                    <th>Effects on Land</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>0</td>
+                                    <td>Calm</td>
+                                    <td><1</td>
+                                    <td>Smoke rises vertically</td>
+                                </tr>
+                                <tr>
+                                    <td>1</td>
+                                    <td>Light Air</td>
+                                    <td>1-5</td>
+                                    <td>Direction shown by smoke drift but not by wind vanes</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Light Breeze</td>
+                                    <td>6-11</td>
+                                    <td>Wind felt on face; leaves rustle; wind vanes move</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>Gentle Breeze</td>
+                                    <td>12-19</td>
+                                    <td>Leaves and small twigs in constant motion; light flags extended</td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>Moderate Breeze</td>
+                                    <td>20-28</td>
+                                    <td>Raises dust and loose paper; small branches moved</td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td>Fresh Breeze</td>
+                                    <td>29-38</td>
+                                    <td>Small trees in leaf begin to sway; crested wavelets form on inland waters</td>
+                                </tr>
+                                <tr>
+                                    <td>6</td>
+                                    <td>Strong Breeze</td>
+                                    <td>39-49</td>
+                                    <td>Large branches in motion; whistling heard in telegraph wires; umbrellas used with difficulty</td>
+                                </tr>
+                                <tr>
+                                    <td>7</td>
+                                    <td>Near Gale</td>
+                                    <td>50-61</td>
+                                    <td>Whole trees in motion; inconvenience felt when walking against wind</td>
+                                </tr>
+                                <tr>
+                                    <td>8</td>
+                                    <td>Gale</td>
+                                    <td>62-74</td>
+                                    <td>Twigs break off trees; generally impedes progress</td>
+                                </tr>
+                                <tr>
+                                    <td>9</td>
+                                    <td>Strong Gale</td>
+                                    <td>75-88</td>
+                                    <td>Slight structural damage; chimney pots and slates removed</td>
+                                </tr>
+                                <tr>
+                                    <td>10</td>
+                                    <td>Storm</td>
+                                    <td>89-102</td>
+                                    <td>Trees uprooted; considerable structural damage</td>
+                                </tr>
+                                <tr>
+                                    <td>11</td>
+                                    <td>Violent Storm</td>
+                                    <td>103-117</td>
+                                    <td>Widespread damage</td>
+                                </tr>
+                                <tr>
+                                    <td>12</td>
+                                    <td>Hurricane</td>
+                                    <td>≥118</td>
+                                    <td>Severe widespread damage to structures</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Station Details Card -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Weather Station Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr>
+                                    <th style="width: 150px;">Station Name:</th>
+                                    <td>{{ selected_station.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Station ID:</th>
+                                    <td>{{ selected_station.station_id }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Municipality:</th>
+                                    <td>{{ selected_station.concelho.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>District:</th>
+                                    <td>
+                                        {% if selected_station.concelho and selected_station.concelho.distrito %}
+                                            {{ selected_station.concelho.distrito.name }}
+                                        {% else %}
+                                            Not Available
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong>Station Location:</strong>
+                            </div>
+                            <!-- Station Map -->
+                            <div id="station-map" style="height: 250px; width: 100%;" class="rounded"></div>
+                                                    
+                            <!-- Initialize Map Script (only if station is selected) -->
+                            {% if selected_station and selected_station.location %}
+                            <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                // Initialize map
+                                var map = L.map('station-map').setView(
+                                    [{{ selected_station.location.y }}, {{ selected_station.location.x }}], 
+                                    12  // Zoom level
+                                );
+                                
+                                // Add basemap tile layer (OpenStreetMap)
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                }).addTo(map);
+                                
+                                // Add satellite imagery option
+                                var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                                });
+                                
+                                // Layer control
+                                var baseLayers = {
+                                    "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                    }),
+                                    "Satellite": satellite
+                                };
+                                
+                                L.control.layers(baseLayers).addTo(map);
+                                
+                                // Add station marker
+                                var marker = L.marker([{{ selected_station.location.y }}, {{ selected_station.location.x }}])
+                                    .addTo(map)
+                                    .bindPopup("<strong>{{ selected_station.name }}</strong><br>{{ selected_station.concelho.name }}");
+                                
+                                <!-- Add wind direction arrow if we have data -->
+                                {% if stats.current_direction and stats.current_direction != 0 %}
+                                var arrowIcon = L.divIcon({
+                                    html: '<i class="fa fa-arrow-up fa-2x" style="color: #1E88E5; transform: rotate(' + ({{ stats.current_direction }} - 1) * 45 + 'deg);"></i>',
+                                    iconSize: [20, 20],
+                                    className: 'wind-direction-arrow'
+                                });
+                                
+                                L.marker([{{ selected_station.location.y }}, {{ selected_station.location.x }}], {
+                                    icon: arrowIcon,
+                                    zIndexOffset: 1000
+                                }).addTo(map);
+                                {% endif %}
+                                
+                                // Handle night mode changes
+                                document.addEventListener('nightModeToggled', function() {
+                                    if (document.body.classList.contains('night-mode')) {
+                                        // You could switch to a darker map style here if needed
+                                    }
+                                });
+                            });
+                            </script>
+                            {% elif selected_station %}
+                            <!-- If station exists but no location data -->
+                            <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                // Initialize map centered on Portugal
+                                var map = L.map('station-map').setView([39.5, -8.0], 6);
+                                
+                                // Add basemap
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                }).addTo(map);
+                                
+                                // Add a notice that location is not available
+                                var noLocationNotice = L.control({position: 'bottomleft'});
+                                noLocationNotice.onAdd = function(map) {
+                                    var div = L.DomUtil.create('div', 'info legend');
+                                    div.innerHTML = '<div class="alert alert-warning p-2 m-1" style="background-color: white;">No precise location data available for this station</div>';
+                                    return div;
+                                };
+                                noLocationNotice.addTo(map);
+                            });
+                            </script>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- No Station Selected -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-body text-center py-5">
+                    <i class="fa-solid fa-triangle-exclamation fa-4x text-warning mb-3"></i>
+                    <h4>No Weather Station Selected</h4>
+                    <p>Please select a weather station from the dropdown menu to view wind data.</p>
+                    
+                    {% if stations %}
+                    <div class="mt-4">
+                        <h5>Available Stations:</h5>
+                        <div class="row justify-content-center mt-3">
+                            {% for station in stations|slice:":6" %}
+                            <div class="col-md-4 col-lg-3 mb-3">
+                                <a href="?station={{ station.station_id }}" class="btn btn-outline-primary btn-block py-2">{{ station.name }}</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if stations.count > 6 %}
+                        <div class="mt-2 text-muted">And {{ stations.count|add:"-6" }} more stations</div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mt-4">
+                        <i class="fa-solid fa-info-circle me-2"></i>
+                        No weather stations found in the database. Please add stations first.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if wind_data %}
+<!-- Plotly JS for the wind chart -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartData = {{ wind_data|safe }};
+    Plotly.newPlot('wind-chart', JSON.parse(chartData));
+    
+    // Update chart on window resize
+    window.addEventListener('resize', function() {
+        Plotly.relayout('wind-chart', {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true
+        });
+    });
+    
+    // Handle night mode toggle
+    document.addEventListener('nightModeToggled', function() {
+        if (document.body.classList.contains('night-mode')) {
+            Plotly.relayout('wind-chart', {
+                'paper_bgcolor': '#1E1E1E',
+                'plot_bgcolor': '#1E1E1E',
+                'font.color': '#E0E0E0',
+                'xaxis.gridcolor': '#444444',
+                'yaxis.gridcolor': '#444444'
+            });
+        } else {
+            Plotly.relayout('wind-chart', {
+                'paper_bgcolor': '#F3F6F9',
+                'plot_bgcolor': '#F3F6F9',
+                'font.color': '#000000',
+                'xaxis.gridcolor': '#E0E0E0',
+                'yaxis.gridcolor': '#E0E0E0'
+            });
+        }
+    });
+    
+    // Apply night mode if active
+    if (document.body.classList.contains('night-mode')) {
+        Plotly.relayout('wind-chart', {
+            'paper_bgcolor': '#1E1E1E',
+            'plot_bgcolor': '#1E1E1E',
+            'font.color': '#E0E0E0',
+            'xaxis.gridcolor': '#444444',
+            'yaxis.gridcolor': '#444444'
+        });
+    }
+});
+</script>
+{% endif %}
+
+{% if wind_rose_data %}
+<!-- Plotly JS for the wind rose chart -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const windRoseData = {{ wind_rose_data|safe }};
+    Plotly.newPlot('wind-rose-chart', windRoseData.data, windRoseData.layout);
+    
+    // Handle night mode toggle
+    document.addEventListener('nightModeToggled', function() {
+        if (document.body.classList.contains('night-mode')) {
+            Plotly.relayout('wind-rose-chart', {
+                'paper_bgcolor': '#1E1E1E',
+                'plot_bgcolor': '#1E1E1E',
+                'font.color': '#E0E0E0'
+            });
+        } else {
+            Plotly.relayout('wind-rose-chart', {
+                'paper_bgcolor': '#F3F6F9',
+                'plot_bgcolor': '#F3F6F9',
+                'font.color': '#000000'
+            });
+        }
+    });
+    
+    // Apply night mode if active
+    if (document.body.classList.contains('night-mode')) {
+        Plotly.relayout('wind-rose-chart', {
+            'paper_bgcolor': '#1E1E1E',
+            'plot_bgcolor': '#1E1E1E',
+            'font.color': '#E0E0E0'
+        });
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
