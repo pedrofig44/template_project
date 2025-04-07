@@ -7,6 +7,8 @@ from django.utils import timezone
 import polars as pl
 import json
 from dashboard.utils import generate_line_chart
+from location.models import Distrito, Concelho
+from climate.models import FireRisk
 
 def wildfire_dashboard(request):
     """
@@ -156,3 +158,89 @@ def wildfire_dashboard(request):
         return render(request, 'wildfires/dashboard_content.html', context)
     else:
         return render(request, 'wildfires/dashboard.html', context)
+    
+    
+    
+def wildfire_risk_map(request):
+    """
+    View for displaying the wildfire risk map of Portugal
+    """
+    # Get the current date
+    current_date = timezone.now().date()
+    
+    # Get fire risk data for all concelhos
+    fire_risks = FireRisk.objects.filter(
+        forecast_day=0  # Today's forecast
+    ).select_related('concelho')
+    
+    # For tomorrow's data if needed
+    tomorrow_risks = FireRisk.objects.filter(
+        forecast_day=1  # Tomorrow's forecast
+    ).select_related('concelho')
+    
+    # Count active wildfires (this would connect to a real data source in production)
+    # Placeholder data for demonstration
+    active_wildfires_count = 12
+    
+    # Get total area burned statistics (placeholder data)
+    total_area_burned = 3450.7  # hectares
+    
+    # Organize data by distrito for the map
+    distritos_data = {}
+    risk_distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}  # Count municipalities in each risk level
+    
+    for distrito in Distrito.objects.all():
+        # Find the highest risk level in this distrito's concelhos
+        max_risk_level = 1  # Default to low risk
+        concelho_risks = []
+        
+        for fire_risk in fire_risks:
+            if fire_risk.concelho.distrito.district_code == distrito.district_code:
+                concelho_risks.append({
+                    'concelho': fire_risk.concelho.name,
+                    'risk_level': fire_risk.risk_level,
+                    'dico_code': fire_risk.concelho.dico_code
+                })
+                
+                # Update risk distribution count
+                risk_distribution[fire_risk.risk_level] = risk_distribution.get(fire_risk.risk_level, 0) + 1
+                
+                if fire_risk.risk_level > max_risk_level:
+                    max_risk_level = fire_risk.risk_level
+        
+        distritos_data[distrito.district_code] = {
+            'name': distrito.name,
+            'risk_level': max_risk_level,
+            'concelho_risks': concelho_risks
+        }
+    
+    # Get highest risk municipalities (those with level 4 or 5)
+    high_risk_concelhos = []
+    for risk in fire_risks:
+        if risk.risk_level >= 4:
+            high_risk_concelhos.append({
+                'name': risk.concelho.name,
+                'distrito': risk.concelho.distrito.name,
+                'risk_level': risk.risk_level
+            })
+    
+    # Weather conditions (placeholder data)
+    weather_conditions = {
+        'avg_temp': 25.7,
+        'avg_humidity': 45,
+        'avg_wind_speed': 15,
+        'precipitation_7days': 0.5
+    }
+    
+    # Prepare context for template
+    context = {
+        'distritos_data': distritos_data,
+        'current_date': current_date,
+        'active_wildfires': active_wildfires_count,
+        'total_area_burned': total_area_burned,
+        'high_risk_concelhos': high_risk_concelhos,
+        'risk_distribution': risk_distribution,
+        'weather_conditions': weather_conditions,
+    }
+    
+    return render(request, 'wildfires/risk_map.html', context)

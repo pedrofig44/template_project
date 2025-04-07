@@ -1,0 +1,396 @@
+<!-- templates/wildfires/risk_map.html -->
+{% extends 'includes/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid pt-4 px-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="text-start">
+                Wildfire Risk Map
+                <span class="fs-6 text-muted ms-2">Portugal</span>
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="btn-group">
+                <button class="btn btn-primary" id="today-btn">Today</button>
+                <button class="btn btn-outline-primary" id="tomorrow-btn">Tomorrow</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map and Indicators Row -->
+    <div class="row">
+        <!-- Map Container (Left Side) -->
+        <div class="col-xl-8 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <!-- Map Legend -->
+                    <div class="mb-3">
+                        <span class="badge bg-success me-2 px-3">Reduced Risk</span>
+                        <span class="badge bg-warning text-dark me-2 px-3">Moderate Risk</span>
+                        <span class="badge me-2 px-3" style="background-color: #fd7e14;">High Risk</span>
+                        <span class="badge bg-danger me-2 px-3">Very High Risk</span>
+                        <span class="badge me-2 px-3" style="background-color: #990000;">Maximum Risk</span>
+                    </div>
+                    
+                    <!-- Map Container -->
+                    <div id="wildfire-risk-map" style="height: 600px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Indicators Panel (Right Side) -->
+        <div class="col-xl-4 mb-4">
+            <!-- Current Situation Card -->
+            <div class="card bg-light border-0 shadow mb-4">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Current Situation</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Date and Time -->
+                    <div class="small text-muted mb-3">Data as of {{ current_date|date:"F j, Y" }}</div>
+                    
+                    <!-- Active Wildfires -->
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <i class="fa-solid fa-fire fa-2x text-danger"></i>
+                        </div>
+                        <div class="ms-3">
+                            <div class="small text-muted">Active Wildfires</div>
+                            <div class="h3">{{ active_wildfires }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Total Area Burned -->
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <i class="fa-solid fa-mountain fa-2x text-warning"></i>
+                        </div>
+                        <div class="ms-3">
+                            <div class="small text-muted">Total Area Burned (YTD)</div>
+                            <div class="h3">{{ total_area_burned|floatformat:1 }} ha</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Highest Risk Areas -->
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fa-solid fa-triangle-exclamation fa-2x text-danger"></i>
+                        </div>
+                        <div class="ms-3">
+                            <div class="small text-muted">Highest Risk Regions</div>
+                            <div>
+                                <!-- Display districts with high/maximum risk -->
+                                {% for distrito_code, distrito in distritos_data.items %}
+                                    {% if distrito.risk_level >= 4 %}
+                                        <span class="badge bg-danger mb-1 me-1">{{ distrito.name }}</span>
+                                    {% endif %}
+                                {% empty %}
+                                    <span class="text-success">No regions at very high risk today</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Risk Distribution Card -->
+            <div class="card bg-light border-0 shadow mb-4">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Risk Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div id="risk-distribution-chart" style="height: 250px;"></div>
+                </div>
+            </div>
+            
+            <!-- Weather Conditions Card -->
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Related Weather Conditions</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Temperature -->
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="fa-solid fa-temperature-high me-2 text-danger"></i> Avg. Temperature</span>
+                        <span class="text-end">{{ weather_conditions.avg_temp }}°C</span>
+                    </div>
+                    
+                    <!-- Humidity -->
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="fa-solid fa-droplet me-2 text-primary"></i> Avg. Humidity</span>
+                        <span class="text-end">{{ weather_conditions.avg_humidity }}%</span>
+                    </div>
+                    
+                    <!-- Wind Speed -->
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="fa-solid fa-wind me-2 text-info"></i> Avg. Wind Speed</span>
+                        <span class="text-end">{{ weather_conditions.avg_wind_speed }} km/h</span>
+                    </div>
+                    
+                    <!-- Precipitation -->
+                    <div class="d-flex justify-content-between">
+                        <span><i class="fa-solid fa-cloud-rain me-2 text-primary"></i> Precipitation (Last 7 Days)</span>
+                        <span class="text-end">{{ weather_conditions.precipitation_7days }} mm</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- High Risk Municipalities Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">High Risk Municipalities</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Municipality</th>
+                                    <th>District</th>
+                                    <th>Risk Level</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for concelho in high_risk_concelhos %}
+                                <tr>
+                                    <td>{{ concelho.name }}</td>
+                                    <td>{{ concelho.distrito }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="{% if concelho.risk_level == 4 %}bg-danger{% else %}bg-danger{% endif %} rounded me-2" style="width: 20px; height: 20px; {% if concelho.risk_level == 5 %}background-color: #990000 !important;{% endif %}"></div>
+                                            <span>{% if concelho.risk_level == 4 %}Very High Risk{% else %}Maximum Risk{% endif %} ({{ concelho.risk_level }})</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge {% if concelho.risk_level == 5 %}bg-danger{% else %}bg-warning text-dark{% endif %}">{% if concelho.risk_level == 5 %}Critical{% else %}Alert{% endif %}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No municipalities currently at high risk</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Map and Charts -->
+<!-- JavaScript for Map and Charts -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the map of Portugal
+        const map = L.map('wildfire-risk-map').setView([39.5, -8.0], 7);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Declare a global variable for the districts layer
+        let districtsLayer;
+        
+        // Function to get color based on FWI value
+        function getFWIColor(fwi) {
+            return fwi > 30 ? '#990000' :
+                   fwi > 20 ? '#dc3545' :
+                   fwi > 15 ? '#fd7e14' :
+                   fwi > 10 ? '#ffc107' :
+                              '#28a745';
+        }
+        
+        // Function to get FWI for a district
+        function getFWIForDistrict(districtId) {
+            // This is a placeholder - replace with your actual FWI data source
+            const mockFWIData = {
+                // Using district codes as keys (adjust these to match your actual district codes)
+                "01": 15, // Example: Aveiro
+                "02": 25, // Example: Beja
+                "03": 10,
+                "04": 18,
+                "05": 22,
+                "06": 8,
+                "07": 30,
+                "08": 12,
+                "09": 17,
+                "10": 28,
+                "11": 20, // Lisboa
+                "12": 14,
+                "13": 24, // Porto
+                "14": 16,
+                "15": 32,
+                "16": 19,
+                "17": 11,
+                "18": 26
+            };
+            
+            return mockFWIData[districtId] || 5; // Default to 5 if not found
+        }
+        
+        // Helper function to convert FWI to risk level (1-5)
+        function getRiskLevelFromFWI(fwi) {
+            return fwi > 30 ? 5 :
+                   fwi > 20 ? 4 :
+                   fwi > 15 ? 3 :
+                   fwi > 10 ? 2 :
+                              1;
+        }
+        
+        // Load the GeoJSON file for Portugal districts
+        fetch('/static/location/continente_distritos.json')
+            .then(response => response.json())
+            .then(data => {
+                // Store the GeoJSON data in districtsLayer
+                districtsLayer = L.geoJSON(data, {
+                    style: function(feature) {
+                        // Get the district code/ID from feature properties
+                        // Note: Adjust the property name based on your GeoJSON structure
+                        const districtId = feature.properties.district_code || feature.properties.dicofre || feature.properties.id;
+                        
+                        // Get FWI value for this district
+                        const fwiValue = getFWIForDistrict(districtId);
+                        
+                        return {
+                            fillColor: getFWIColor(fwiValue),
+                            weight: 2,
+                            opacity: 1,
+                            color: 'white',
+                            dashArray: '3',
+                            fillOpacity: 0.7
+                        };
+                    },
+                    onEachFeature: function(feature, layer) {
+                        // Get district information
+                        const districtId = feature.properties.district_code || feature.properties.dicofre || feature.properties.id;
+                        const districtName = feature.properties.name || feature.properties.distrito || feature.properties.Nome;
+                        
+                        // Get FWI value
+                        const fwiValue = getFWIForDistrict(districtId);
+                        
+                        // Add popup with district information
+                        layer.bindPopup(
+                            `<strong>${districtName}</strong><br>
+                            FWI: ${fwiValue}<br>
+                            Risk Level: ${getRiskLevelFromFWI(fwiValue)}`
+                        );
+                    }
+                }).addTo(map);
+            })
+            .catch(error => {
+                console.error('Error loading GeoJSON:', error);
+                alert('Failed to load district data. Please try refreshing the page.');
+            });
+        
+        // Function to update the map with new FWI data (for today/tomorrow toggle)
+        function updateMapWithFWIData(fwiData) {
+            if (districtsLayer) {
+                districtsLayer.eachLayer(function(layer) {
+                    const feature = layer.feature;
+                    const districtId = feature.properties.district_code || feature.properties.dicofre || feature.properties.id;
+                    const districtName = feature.properties.name || feature.properties.distrito || feature.properties.Nome;
+                    
+                    // Get updated FWI value
+                    const fwiValue = fwiData[districtId] || 5;
+                    
+                    // Update style and popup
+                    layer.setStyle({
+                        fillColor: getFWIColor(fwiValue)
+                    });
+                    
+                    layer.bindPopup(
+                        `<strong>${districtName}</strong><br>
+                        FWI: ${fwiValue}<br>
+                        Risk Level: ${getRiskLevelFromFWI(fwiValue)}`
+                    );
+                });
+            }
+        }
+        
+        // Create risk distribution chart using Plotly
+        const riskLabels = ['Reduced Risk', 'Moderate Risk', 'High Risk', 'Very High Risk', 'Maximum Risk'];
+        const riskColors = ['#28a745', '#ffc107', '#fd7e14', '#dc3545', '#990000'];
+        
+        // Get risk distribution data from the backend
+        const riskValues = [
+            {{ risk_distribution.1 }},
+            {{ risk_distribution.2 }},
+            {{ risk_distribution.3 }},
+            {{ risk_distribution.4 }},
+            {{ risk_distribution.5 }}
+        ];
+        
+        const riskDistData = [{
+            values: riskValues,
+            labels: riskLabels,
+            type: 'pie',
+            marker: {
+                colors: riskColors
+            }
+        }];
+        
+        const riskDistLayout = {
+            title: 'Municipality Risk Distribution',
+            height: 250,
+            margin: {t: 30, b: 10, l: 10, r: 10},
+            showlegend: true,
+            legend: {orientation: 'h', y: -0.2}
+        };
+        
+        Plotly.newPlot('risk-distribution-chart', riskDistData, riskDistLayout);
+        
+        // Handle night mode for charts
+        function applyChartNightMode() {
+            if (document.body.classList.contains('night-mode')) {
+                const darkStyle = {
+                    'paper_bgcolor': '#1E1E1E',
+                    'plot_bgcolor': '#1E1E1E',
+                    'font.color': '#E0E0E0'
+                };
+                
+                Plotly.relayout('risk-distribution-chart', darkStyle);
+            }
+        }
+        
+        // Apply night mode if active on page load
+        applyChartNightMode();
+        
+        // Listen for night mode changes
+        document.addEventListener('nightModeToggled', applyChartNightMode);
+        
+        // Toggle between today and tomorrow data
+        document.getElementById('today-btn').addEventListener('click', function() {
+            this.classList.add('btn-primary');
+            this.classList.remove('btn-outline-primary');
+            document.getElementById('tomorrow-btn').classList.add('btn-outline-primary');
+            document.getElementById('tomorrow-btn').classList.remove('btn-primary');
+            
+            // In a real app, this would load today's FWI data
+            // fetch('/api/fwi-data/today')
+            //     .then(response => response.json())
+            //     .then(data => updateMapWithFWIData(data));
+        });
+        
+        document.getElementById('tomorrow-btn').addEventListener('click', function() {
+            this.classList.add('btn-primary');
+            this.classList.remove('btn-outline-primary');
+            document.getElementById('today-btn').classList.add('btn-outline-primary');
+            document.getElementById('today-btn').classList.remove('btn-primary');
+            
+            // In a real app, this would load tomorrow's FWI data
+            // fetch('/api/fwi-data/tomorrow')
+            //     .then(response => response.json())
+            //     .then(data => updateMapWithFWIData(data));
+        });
+    });
+</script>
+{% endblock %}
