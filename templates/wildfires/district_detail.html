@@ -1,0 +1,351 @@
+{% extends 'includes/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid pt-4 px-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="text-start">
+                {{ distrito.name }} District
+                <span class="fs-6 text-muted ms-2">Wildfire Risk Profile</span>
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'wildfires:risk_map' %}" class="btn btn-outline-primary">
+                <i class="fa fa-map me-2"></i>Back to Map
+            </a>
+        </div>
+    </div>
+
+    <!-- Current Risk Status -->
+    <div class="row mb-4">
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                style="width: 70px; height: 70px; background-color: 
+                                {% if distrito_risk == 5 %}#990000
+                                {% elif distrito_risk == 4 %}#dc3545
+                                {% elif distrito_risk == 3 %}#fd7e14
+                                {% elif distrito_risk == 2 %}#ffc107
+                                {% else %}#28a745{% endif %}">
+                                <span class="h2 text-white mb-0">{{ distrito_risk }}</span>
+                            </div>
+                        </div>
+                        <div class="col-9">
+                            <h5 class="card-title">Current Fire Risk Level</h5>
+                            <p class="card-text">
+                                {% if distrito_risk == 5 %}Maximum Risk
+                                {% elif distrito_risk == 4 %}Very High Risk
+                                {% elif distrito_risk == 3 %}High Risk
+                                {% elif distrito_risk == 2 %}Moderate Risk
+                                {% else %}Reduced Risk{% endif %}
+                            </p>
+                            <p class="small text-muted">{{ current_date|date:"F j, Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                style="width: 70px; height: 70px; background-color: 
+                                {% if tomorrow_distrito_risk == 5 %}#990000
+                                {% elif tomorrow_distrito_risk == 4 %}#dc3545
+                                {% elif tomorrow_distrito_risk == 3 %}#fd7e14
+                                {% elif tomorrow_distrito_risk == 2 %}#ffc107
+                                {% else %}#28a745{% endif %}">
+                                <span class="h2 text-white mb-0">{{ tomorrow_distrito_risk }}</span>
+                            </div>
+                        </div>
+                        <div class="col-9">
+                            <h5 class="card-title">Tomorrow's Forecast</h5>
+                            <p class="card-text">
+                                {% if tomorrow_distrito_risk == 5 %}Maximum Risk
+                                {% elif tomorrow_distrito_risk == 4 %}Very High Risk
+                                {% elif tomorrow_distrito_risk == 3 %}High Risk
+                                {% elif tomorrow_distrito_risk == 2 %}Moderate Risk
+                                {% else %}Reduced Risk{% endif %}
+                            </p>
+                            <p class="small text-muted">{{ current_date|date:"F j, Y"|add:" + 1 day" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-12 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Risk Distribution</h5>
+                    <div class="row">
+                        {% for level, count in risk_distribution.items %}
+                            <div class="col-12 mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>
+                                        <span class="badge 
+                                            {% if level == 5 %}bg-danger
+                                            {% elif level == 4 %}bg-danger
+                                            {% elif level == 3 %}bg-warning text-dark
+                                            {% elif level == 2 %}bg-warning text-dark
+                                            {% else %}bg-success{% endif %} me-2">
+                                            {{ level }}
+                                        </span>
+                                        {% if level == 5 %}Maximum Risk
+                                        {% elif level == 4 %}Very High Risk
+                                        {% elif level == 3 %}High Risk
+                                        {% elif level == 2 %}Moderate Risk
+                                        {% else %}Reduced Risk{% endif %}
+                                    </span>
+                                    <span class="text-muted">{{ count }} municipalities</span>
+                                </div>
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar 
+                                        {% if level == 5 %}bg-danger
+                                        {% elif level == 4 %}bg-danger
+                                        {% elif level == 3 %}bg-warning
+                                        {% elif level == 2 %}bg-warning
+                                        {% else %}bg-success{% endif %}" 
+                                        role="progressbar" 
+                                        style="width: {{ count|divisibleby:concelhos.count|mult:100 }}%;" 
+                                        aria-valuenow="{{ count }}" 
+                                        aria-valuemin="0" 
+                                        aria-valuemax="{{ concelhos.count }}">
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weather and Historical Data Row -->
+    <div class="row mb-4">
+        <!-- Weather Conditions -->
+        <div class="col-xl-4 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Weather Conditions</h5>
+                    <span class="badge bg-primary">Updated: Today</span>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span><i class="fa-solid fa-temperature-high me-2 text-danger"></i> Temperature</span>
+                        <span>{{ weather_conditions.temperature }}°C</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span><i class="fa-solid fa-droplet me-2 text-primary"></i> Humidity</span>
+                        <span>{{ weather_conditions.humidity }}%</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span><i class="fa-solid fa-wind me-2 text-info"></i> Wind</span>
+                        <span>{{ weather_conditions.wind_speed }} km/h ({{ weather_conditions.wind_direction }})</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span><i class="fa-solid fa-cloud-rain me-2 text-primary"></i> Rain Chance</span>
+                        <span>{{ weather_conditions.precipitation_chance }}%</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span><i class="fa-solid fa-calendar-day me-2 text-secondary"></i> Last Rainfall</span>
+                        <span>{{ weather_conditions.last_rainfall|date:"F j" }}</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <div class="text-center">
+                        <span class="badge {% if weather_conditions.humidity < 40 %}bg-danger{% elif weather_conditions.humidity < 60 %}bg-warning text-dark{% else %}bg-success{% endif %} me-2">Humidity</span>
+                        <span class="badge {% if weather_conditions.wind_speed > 15 %}bg-danger{% elif weather_conditions.wind_speed > 10 %}bg-warning text-dark{% else %}bg-success{% endif %} me-2">Wind</span>
+                        <span class="badge {% if weather_conditions.temperature > 30 %}bg-danger{% elif weather_conditions.temperature > 25 %}bg-warning text-dark{% else %}bg-success{% endif %}">Temperature</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Historical Risk Chart -->
+        <div class="col-xl-4 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Risk History (Last 7 Days)</h5>
+                </div>
+                <div class="card-body">
+                    <div style="height: 230px;">
+                        <!-- Placeholder for a chart - in real implementation, this would be a Plotly chart -->
+                        <div class="w-100 h-100 bg-light d-flex align-items-center justify-content-center">
+                            <div class="text-center">
+                                <i class="fa-solid fa-chart-line fa-3x text-secondary mb-3"></i>
+                                <p class="text-muted">Risk level trend chart would appear here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Active Wildfires -->
+        <div class="col-xl-4 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">
+                        Active Wildfires
+                        {% if active_wildfires %}
+                        <span class="badge bg-danger ms-2">{{ active_wildfires|length }}</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if active_wildfires %}
+                        {% for fire in active_wildfires %}
+                        <div class="d-flex mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                            <div class="flex-shrink-0">
+                                <i class="fa-solid fa-fire fa-2x text-danger"></i>
+                            </div>
+                            <div class="ms-3">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="mb-0">{{ fire.location }}</h6>
+                                    <span class="badge {% if fire.status == 'Active' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ fire.status }}</span>
+                                </div>
+                                <p class="mb-0 small">Started: {{ fire.start_time|date:"F j, g:i a" }}</p>
+                                <p class="mb-0 small">Affected area: {{ fire.area_ha }} ha</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-check-circle fa-3x text-success mb-3"></i>
+                            <p class="text-muted">No active wildfires in this district</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Municipalities Table -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Municipalities ({{ concelhos.count }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Municipality</th>
+                                    <th>DICO Code</th>
+                                    <th>Today's Risk</th>
+                                    <th>Tomorrow's Risk</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for concelho in concelhos %}
+                                <tr>
+                                    <td>{{ concelho.name }}</td>
+                                    <td><code>{{ concelho.dico_code }}</code></td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% with risk_level=concelho_risks|get:concelho.dico_code|default:1 %}
+                                            <div class="rounded me-2" style="width: 20px; height: 20px; background-color: 
+                                                {% if risk_level == 5 %}#990000
+                                                {% elif risk_level == 4 %}#dc3545
+                                                {% elif risk_level == 3 %}#fd7e14
+                                                {% elif risk_level == 2 %}#ffc107
+                                                {% else %}#28a745{% endif %}">
+                                            </div>
+                                            <span>Level {{ risk_level }}</span>
+                                            {% endwith %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% with risk_level=tomorrow_concelho_risks|get:concelho.dico_code|default:1 %}
+                                            <div class="rounded me-2" style="width: 20px; height: 20px; background-color: 
+                                                {% if risk_level == 5 %}#990000
+                                                {% elif risk_level == 4 %}#dc3545
+                                                {% elif risk_level == 3 %}#fd7e14
+                                                {% elif risk_level == 2 %}#ffc107
+                                                {% else %}#28a745{% endif %}">
+                                            </div>
+                                            <span>Level {{ risk_level }}</span>
+                                            {% endwith %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% with risk_level=concelho_risks|get:concelho.dico_code|default:1 %}
+                                        <span class="badge 
+                                            {% if risk_level >= 4 %}bg-danger
+                                            {% elif risk_level == 3 %}bg-warning text-dark
+                                            {% elif risk_level == 2 %}bg-warning text-dark
+                                            {% else %}bg-success{% endif %}">
+                                            {% if risk_level >= 4 %}Alert
+                                            {% elif risk_level == 3 %}Warning
+                                            {% else %}Normal{% endif %}
+                                        </span>
+                                        {% endwith %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No municipalities found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historical Wildfires -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Wildfires</h5>
+                    <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Location</th>
+                                    <th>Area (ha)</th>
+                                    <th>Duration (hours)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for fire in historical_wildfires %}
+                                <tr>
+                                    <td>{{ fire.date }}</td>
+                                    <td>{{ fire.location }}</td>
+                                    <td>{{ fire.area_ha }}</td>
+                                    <td>{{ fire.duration_hours }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No historical wildfire data available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

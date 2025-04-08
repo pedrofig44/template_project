@@ -96,13 +96,14 @@
                 </div>
             </div>
             
-            <!-- Risk Distribution Card -->
+            <!-- In risk_map.html, update the chart container div -->
             <div class="card bg-light border-0 shadow mb-4">
                 <div class="card-header bg-transparent border-0">
                     <h5 class="mb-0">Risk Distribution</h5>
                 </div>
                 <div class="card-body">
-                    <div id="risk-distribution-chart" style="height: 250px;"></div>
+                    <!-- Increased height for the chart container -->
+                    <div id="risk-distribution-chart" style="height: 300px; margin-bottom: 50px;"></div>
                 </div>
             </div>
             
@@ -185,10 +186,20 @@
     </div>
 </div>
 
-<!-- JavaScript for Map and Charts -->
-<!-- JavaScript for Map and Charts -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Get the district risk data from Django
+        const todayRiskData = {{ district_risk_json|safe }};
+        const tomorrowRiskData = {{ tomorrow_district_risk_json|safe }};
+        let currentRiskData = todayRiskData; // Default to today's data
+
+        const chartData = {{ risk_distribution_chart|safe }};
+        Plotly.newPlot('risk-distribution-chart', chartData.data, chartData.layout);
+        
+        
+        // Debug log to check the data
+        console.log('Today Risk Data:', todayRiskData);
+        
         // Initialize the map of Portugal
         const map = L.map('wildfire-risk-map').setView([39.5, -8.0], 7);
         
@@ -200,50 +211,46 @@
         // Declare a global variable for the districts layer
         let districtsLayer;
         
-        // Function to get color based on FWI value
-        function getFWIColor(fwi) {
-            return fwi > 30 ? '#990000' :
-                   fwi > 20 ? '#dc3545' :
-                   fwi > 15 ? '#fd7e14' :
-                   fwi > 10 ? '#ffc107' :
+        // Function to get color based on risk level
+        function getRiskColor(riskLevel) {
+            return riskLevel === 5 ? '#990000' :
+                   riskLevel === 4 ? '#dc3545' :
+                   riskLevel === 3 ? '#fd7e14' :
+                   riskLevel === 2 ? '#ffc107' :
                               '#28a745';
         }
         
-        // Function to get FWI for a district
-        function getFWIForDistrict(districtId) {
-            // This is a placeholder - replace with your actual FWI data source
-            const mockFWIData = {
-                // Using district codes as keys (adjust these to match your actual district codes)
-                "01": 15, // Example: Aveiro
-                "02": 25, // Example: Beja
-                "03": 10,
-                "04": 18,
-                "05": 22,
-                "06": 8,
-                "07": 30,
-                "08": 12,
-                "09": 17,
-                "10": 28,
-                "11": 20, // Lisboa
-                "12": 14,
-                "13": 24, // Porto
-                "14": 16,
-                "15": 32,
-                "16": 19,
-                "17": 11,
-                "18": 26
-            };
+        // Function to get risk level for a district
+        function getRiskForDistrict(districtId) {
+            // Ensure district ID is padded to 2 digits
+            const paddedId = districtId.padStart(2, '0');
             
-            return mockFWIData[districtId] || 5; // Default to 5 if not found
+            if (currentRiskData && currentRiskData[paddedId]) {
+                return currentRiskData[paddedId].risk_level;
+            }
+            return 1; // Default to lowest risk level if no data
         }
         
-        // Helper function to convert FWI to risk level (1-5)
-        function getRiskLevelFromFWI(fwi) {
-            return fwi > 30 ? 5 :
-                   fwi > 20 ? 4 :
-                   fwi > 15 ? 3 :
-                   fwi > 10 ? 2 :
-                              1;
+        // Function to get district name
+        function getDistrictName(districtId) {
+            // Ensure district ID is padded to 2 digits
+            const paddedId = districtId.padStart(2, '0');
+            
+            if (currentRiskData && currentRiskData[paddedId]) {
+                return currentRiskData[paddedId].name;
+            }
+            return null; // Return null to fall back to GeoJSON property
+        }
+        
+        // Function to get concelho risks for a district
+        function getConcelhosForDistrict(districtId) {
+            // Ensure district ID is padded to 2 digits
+            const paddedId = districtId.padStart(2, '0');
+            
+            if (currentRiskData && currentRiskData[paddedId]) {
+                return currentRiskData[paddedId].concelho_risks || [];
+            }
+            return [];
         }
         
         // Load the GeoJSON file for Portugal districts
@@ -253,15 +260,16 @@
                 // Store the GeoJSON data in districtsLayer
                 districtsLayer = L.geoJSON(data, {
                     style: function(feature) {
-                        // Get the district code/ID from feature properties
-                        // Note: Adjust the property name based on your GeoJSON structure
-                        const districtId = feature.properties.district_code || feature.properties.dicofre || feature.properties.id;
+                        // Get the district code from the GeoJSON properties
+                        const districtId = feature.properties.DI;
+                        console.log('GeoJSON District ID:', districtId);
                         
-                        // Get FWI value for this district
-                        const fwiValue = getFWIForDistrict(districtId);
+                        // Get risk level for this district
+                        const riskLevel = getRiskForDistrict(districtId);
+                        console.log('Risk level for district', districtId, ':', riskLevel);
                         
                         return {
-                            fillColor: getFWIColor(fwiValue),
+                            fillColor: getRiskColor(riskLevel),
                             weight: 2,
                             opacity: 1,
                             color: 'white',
@@ -270,19 +278,32 @@
                         };
                     },
                     onEachFeature: function(feature, layer) {
-                        // Get district information
-                        const districtId = feature.properties.district_code || feature.properties.dicofre || feature.properties.id;
-                        const districtName = feature.properties.name || feature.properties.distrito || feature.properties.Nome;
+                        // Get district information from GeoJSON
+                        const districtId = feature.properties.DI;
+                        const geoJsonName = feature.properties.Distrito;
                         
-                        // Get FWI value
-                        const fwiValue = getFWIForDistrict(districtId);
+                        // Get name from our risk data, fallback to GeoJSON name
+                        const districtName = getDistrictName(districtId) || geoJsonName;
+                        
+                        // Get risk level and concelhos
+                        const riskLevel = getRiskForDistrict(districtId);
+                        const concelhos = getConcelhosForDistrict(districtId);
+                        
+                        // Create popup content
+                        let popupContent = `<strong>${districtName}</strong><br>`;
+                        popupContent += `Risk Level: ${riskLevel}`;
+                        
+                        // Add concelho information if available
+                        if (concelhos.length > 0) {
+                            popupContent += '<br><br><strong>Municipalities:</strong><br>';
+                            concelhos.forEach(concelho => {
+                                const color = getRiskColor(concelho.risk_level);
+                                popupContent += `<span style="color:${color}">■</span> ${concelho.concelho} (Level ${concelho.risk_level})<br>`;
+                            });
+                        }
                         
                         // Add popup with district information
-                        layer.bindPopup(
-                            `<strong>${districtName}</strong><br>
-                            FWI: ${fwiValue}<br>
-                            Risk Level: ${getRiskLevelFromFWI(fwiValue)}`
-                        );
+                        layer.bindPopup(popupContent);
                     }
                 }).addTo(map);
             })
@@ -291,81 +312,43 @@
                 alert('Failed to load district data. Please try refreshing the page.');
             });
         
-        // Function to update the map with new FWI data (for today/tomorrow toggle)
-        function updateMapWithFWIData(fwiData) {
+        // Function to update the map with new risk data
+        function updateMapWithRiskData(isToday) {
+            currentRiskData = isToday ? todayRiskData : tomorrowRiskData;
+            
             if (districtsLayer) {
                 districtsLayer.eachLayer(function(layer) {
                     const feature = layer.feature;
-                    const districtId = feature.properties.district_code || feature.properties.dicofre || feature.properties.id;
-                    const districtName = feature.properties.name || feature.properties.distrito || feature.properties.Nome;
+                    const districtId = feature.properties.DI;
+                    const geoJsonName = feature.properties.Distrito;
                     
-                    // Get updated FWI value
-                    const fwiValue = fwiData[districtId] || 5;
+                    // Get updated risk level
+                    const riskLevel = getRiskForDistrict(districtId);
                     
-                    // Update style and popup
+                    // Update style
                     layer.setStyle({
-                        fillColor: getFWIColor(fwiValue)
+                        fillColor: getRiskColor(riskLevel)
                     });
                     
-                    layer.bindPopup(
-                        `<strong>${districtName}</strong><br>
-                        FWI: ${fwiValue}<br>
-                        Risk Level: ${getRiskLevelFromFWI(fwiValue)}`
-                    );
+                    // Update popup content
+                    const districtName = getDistrictName(districtId) || geoJsonName;
+                    const concelhos = getConcelhosForDistrict(districtId);
+                    
+                    let popupContent = `<strong>${districtName}</strong><br>`;
+                    popupContent += `Risk Level: ${riskLevel}`;
+                    
+                    if (concelhos.length > 0) {
+                        popupContent += '<br><br><strong>Municipalities:</strong><br>';
+                        concelhos.forEach(concelho => {
+                            const color = getRiskColor(concelho.risk_level);
+                            popupContent += `<span style="color:${color}">■</span> ${concelho.concelho} (Level ${concelho.risk_level})<br>`;
+                        });
+                    }
+                    
+                    layer.bindPopup(popupContent);
                 });
             }
         }
-        
-        // Create risk distribution chart using Plotly
-        const riskLabels = ['Reduced Risk', 'Moderate Risk', 'High Risk', 'Very High Risk', 'Maximum Risk'];
-        const riskColors = ['#28a745', '#ffc107', '#fd7e14', '#dc3545', '#990000'];
-        
-        // Get risk distribution data from the backend
-        const riskValues = [
-            {{ risk_distribution.1 }},
-            {{ risk_distribution.2 }},
-            {{ risk_distribution.3 }},
-            {{ risk_distribution.4 }},
-            {{ risk_distribution.5 }}
-        ];
-        
-        const riskDistData = [{
-            values: riskValues,
-            labels: riskLabels,
-            type: 'pie',
-            marker: {
-                colors: riskColors
-            }
-        }];
-        
-        const riskDistLayout = {
-            title: 'Municipality Risk Distribution',
-            height: 250,
-            margin: {t: 30, b: 10, l: 10, r: 10},
-            showlegend: true,
-            legend: {orientation: 'h', y: -0.2}
-        };
-        
-        Plotly.newPlot('risk-distribution-chart', riskDistData, riskDistLayout);
-        
-        // Handle night mode for charts
-        function applyChartNightMode() {
-            if (document.body.classList.contains('night-mode')) {
-                const darkStyle = {
-                    'paper_bgcolor': '#1E1E1E',
-                    'plot_bgcolor': '#1E1E1E',
-                    'font.color': '#E0E0E0'
-                };
-                
-                Plotly.relayout('risk-distribution-chart', darkStyle);
-            }
-        }
-        
-        // Apply night mode if active on page load
-        applyChartNightMode();
-        
-        // Listen for night mode changes
-        document.addEventListener('nightModeToggled', applyChartNightMode);
         
         // Toggle between today and tomorrow data
         document.getElementById('today-btn').addEventListener('click', function() {
@@ -374,10 +357,8 @@
             document.getElementById('tomorrow-btn').classList.add('btn-outline-primary');
             document.getElementById('tomorrow-btn').classList.remove('btn-primary');
             
-            // In a real app, this would load today's FWI data
-            // fetch('/api/fwi-data/today')
-            //     .then(response => response.json())
-            //     .then(data => updateMapWithFWIData(data));
+            // Update map with today's data
+            updateMapWithRiskData(true);
         });
         
         document.getElementById('tomorrow-btn').addEventListener('click', function() {
@@ -386,10 +367,8 @@
             document.getElementById('today-btn').classList.add('btn-outline-primary');
             document.getElementById('today-btn').classList.remove('btn-primary');
             
-            // In a real app, this would load tomorrow's FWI data
-            // fetch('/api/fwi-data/tomorrow')
-            //     .then(response => response.json())
-            //     .then(data => updateMapWithFWIData(data));
+            // Update map with tomorrow's data
+            updateMapWithRiskData(false);
         });
     });
 </script>
