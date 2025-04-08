@@ -135,7 +135,6 @@ class FireRisk(models.Model):
     
     class Meta:
         ordering = ['forecast_day', 'concelho']
-        unique_together = ['concelho', 'forecast_day']
         verbose_name = 'Fire Risk'
         verbose_name_plural = 'Fire Risks'
 
