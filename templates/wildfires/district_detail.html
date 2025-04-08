@@ -1,5 +1,6 @@
 {% extends 'includes/base.html' %}
 {% load static %}
+{% load wildfire_filters %}
 
 {% block content %}
 <div class="container-fluid pt-4 px-4">
@@ -115,7 +116,7 @@
                                         {% elif level == 2 %}bg-warning
                                         {% else %}bg-success{% endif %}" 
                                         role="progressbar" 
-                                        style="width: {{ count|divisibleby:concelhos.count|mult:100 }}%;" 
+                                        style="width: {{ count|percentage_of:concelhos.count }}%;" 
                                         aria-valuenow="{{ count }}" 
                                         aria-valuemin="0" 
                                         aria-valuemax="{{ concelhos.count }}">
@@ -136,7 +137,7 @@
             <div class="card bg-light border-0 shadow h-100">
                 <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Weather Conditions</h5>
-                    <span class="badge bg-primary">Updated: Today</span>
+                    <span class="badge bg-primary">{{ recent_observations.last.timestamp|date:"M j, H:i"|default:"Current Data" }}</span>
                 </div>
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-3">
@@ -159,6 +160,19 @@
                         <span><i class="fa-solid fa-calendar-day me-2 text-secondary"></i> Last Rainfall</span>
                         <span>{{ weather_conditions.last_rainfall|date:"F j" }}</span>
                     </div>
+                    
+                    {% if weather_stations %}
+                    <div class="mt-3 small text-muted">
+                        <p class="mb-1">Data from {{ weather_stations.count }} weather station(s)</p>
+                        <p class="mb-0 text-truncate">
+                            <i class="fa-solid fa-location-dot me-1"></i> 
+                            {% for station in weather_stations|slice:":3" %}
+                                {{ station.name }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                            {% if weather_stations.count > 3 %}...{% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="card-footer bg-transparent border-0">
                     <div class="text-center">
@@ -255,7 +269,7 @@
                                     <td><code>{{ concelho.dico_code }}</code></td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            {% with risk_level=concelho_risks|get:concelho.dico_code|default:1 %}
+                                            {% with risk_level=concelho_risks|get_item:concelho.dico_code|default:1 %}
                                             <div class="rounded me-2" style="width: 20px; height: 20px; background-color: 
                                                 {% if risk_level == 5 %}#990000
                                                 {% elif risk_level == 4 %}#dc3545
@@ -269,7 +283,7 @@
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            {% with risk_level=tomorrow_concelho_risks|get:concelho.dico_code|default:1 %}
+                                            {% with risk_level=tomorrow_concelho_risks|get_item:concelho.dico_code|default:1 %}
                                             <div class="rounded me-2" style="width: 20px; height: 20px; background-color: 
                                                 {% if risk_level == 5 %}#990000
                                                 {% elif risk_level == 4 %}#dc3545
@@ -282,7 +296,7 @@
                                         </div>
                                     </td>
                                     <td>
-                                        {% with risk_level=concelho_risks|get:concelho.dico_code|default:1 %}
+                                        {% with risk_level=concelho_risks|get_item:concelho.dico_code|default:1 %}
                                         <span class="badge 
                                             {% if risk_level >= 4 %}bg-danger
                                             {% elif risk_level == 3 %}bg-warning text-dark

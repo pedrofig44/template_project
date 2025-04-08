@@ -13,9 +13,19 @@
             </h2>
         </div>
         <div class="col-md-6 text-end">
-            <div class="btn-group">
+            <div class="btn-group me-2">
                 <button class="btn btn-primary" id="today-btn">Today</button>
                 <button class="btn btn-outline-primary" id="tomorrow-btn">Tomorrow</button>
+            </div>
+            <div class="dropdown d-inline-block">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="districtDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Select District
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="districtDropdown" style="max-height: 400px; overflow-y: auto;">
+                    {% for district_code, district in distritos_data.items %}
+                    <li><a class="dropdown-item" href="{% url 'wildfires:district_detail' district_code=district_code %}">{{ district.name }}</a></li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
     </div>

@@ -2,13 +2,15 @@
 from django.shortcuts import render, get_object_or_404
 from .models import YearlyWildfireSummary
 from location.models import Concelho
-from django.db.models import Sum, Avg, Max
+from django.db.models import Sum, Avg, Max, Min, Count
 from django.utils import timezone
 import polars as pl
 import json
-from dashboard.utils import generate_line_chart
-from location.models import Distrito, Concelho
-from climate.models import FireRisk
+from dashboard.utils import generate_line_chart, generate_pie_chart 
+from location.models import Distrito, Concelho, WeatherStation
+from climate.models import FireRisk, StationObservation
+
+from datetime import timedelta
 
 from django.conf import settings
 
@@ -160,16 +162,7 @@ def wildfire_dashboard(request):
         return render(request, 'wildfires/dashboard_content.html', context)
     else:
         return render(request, 'wildfires/dashboard.html', context)
-    
-    
-from django.shortcuts import render
-from django.utils import timezone
-from django.conf import settings
-import json
 
-from location.models import Distrito, Concelho
-from climate.models import FireRisk
-from dashboard.utils import generate_pie_chart  # Import the new function
 
 def wildfire_risk_map(request):
     """
@@ -388,16 +381,100 @@ def district_detail(request, district_code):
         risk_level = int(risk.risk_level)
         risk_distribution[risk_level] = risk_distribution.get(risk_level, 0) + 1
     
-    # Historical data (Mock data for now)
-    historical_risk_data = [
-        {'date': current_date - timezone.timedelta(days=7), 'risk_level': 2},
-        {'date': current_date - timezone.timedelta(days=6), 'risk_level': 2},
-        {'date': current_date - timezone.timedelta(days=5), 'risk_level': 3},
-        {'date': current_date - timezone.timedelta(days=4), 'risk_level': 3},
-        {'date': current_date - timezone.timedelta(days=3), 'risk_level': 4},
-        {'date': current_date - timezone.timedelta(days=2), 'risk_level': 3},
-        {'date': current_date - timezone.timedelta(days=1), 'risk_level': distrito_risk},
-    ]
+
+    
+    # Get weather stations in this district
+    weather_stations = WeatherStation.objects.filter(concelho__distrito=distrito)
+    
+    # Calculate time range for recent observations
+    now = timezone.now()
+    day_ago = now - timedelta(hours=24)
+    
+    # Get recent observations for these stations
+    recent_observations = StationObservation.objects.filter(
+        station__in=weather_stations,
+        timestamp__gte=day_ago,
+        temperature__gt=-90  # Filter out invalid readings
+    ).exclude(
+        humidity=-99.0
+    ).exclude(
+        wind_speed_kmh=-99.0
+    )
+    
+    # Initialize default weather conditions
+    weather_conditions = {
+        'temperature': 22,
+        'humidity': 45,
+        'wind_speed': 8,
+        'wind_direction': 'NE',
+        'precipitation_chance': 5,
+        'last_rainfall': current_date - timedelta(days=7),
+    }
+    
+    # If we have observations, use real data
+    if recent_observations.exists():
+        # Calculate average weather conditions
+        weather_stats = recent_observations.aggregate(
+            avg_temp=Avg('temperature'),
+            avg_humidity=Avg('humidity'),
+            avg_wind_speed=Avg('wind_speed_kmh')
+        )
+        
+        # Get most recent observation for current conditions
+        latest_observation = recent_observations.order_by('-timestamp').first()
+        
+        # Direction mapping for human-readable output
+        direction_map = {
+            0: 'No Direction',
+            1: 'North', 
+            2: 'Northeast', 
+            3: 'East',
+            4: 'Southeast', 
+            5: 'South', 
+            6: 'Southwest',
+            7: 'West', 
+            8: 'Northwest', 
+            9: 'North'
+        }
+        
+        # Get observations with precipitation
+        week_ago = now - timedelta(days=7)
+        precipitation_observations = StationObservation.objects.filter(
+            station__in=weather_stations,
+            timestamp__gte=week_ago,
+            precipitation__gt=0
+        ).order_by('-timestamp')
+        
+        # Find last rainfall date
+        last_rainfall = precipitation_observations.first()
+        
+        # Calculate precipitation chance based on humidity
+        precipitation_chance = 5  # Default value
+        if latest_observation and latest_observation.humidity:
+            if latest_observation.humidity > 80:
+                precipitation_chance = 45
+            elif latest_observation.humidity > 70:
+                precipitation_chance = 25
+            elif latest_observation.humidity > 60:
+                precipitation_chance = 10
+        
+        # Update weather conditions with real data
+        weather_conditions = {
+            'temperature': round(weather_stats['avg_temp'], 1) if weather_stats['avg_temp'] else 22,
+            'humidity': round(weather_stats['avg_humidity']) if weather_stats['avg_humidity'] else 45,
+            'wind_speed': round(weather_stats['avg_wind_speed']) if weather_stats['avg_wind_speed'] else 8,
+            'wind_direction': direction_map.get(latest_observation.wind_direction if latest_observation else 0, 'Variable'),
+            'precipitation_chance': precipitation_chance,
+            'last_rainfall': last_rainfall.timestamp.date() if last_rainfall else current_date - timedelta(days=7),
+        }
+    
+    # Mock active wildfires - keep this for demonstration
+    active_wildfires = []
+    if distrito_risk >= 4:  # Only show mock active wildfires for high risk districts
+        active_wildfires = [
+            {'location': 'Vale de Cambra', 'start_time': timezone.now() - timedelta(hours=5), 'status': 'Active', 'area_ha': 12.5},
+            {'location': 'Serra da Freita', 'start_time': timezone.now() - timedelta(hours=8), 'status': 'Contained', 'area_ha': 8.2},
+        ]
     
     # Historical wildfires (Mock data for now)
     historical_wildfires = [
@@ -408,24 +485,6 @@ def district_detail(request, district_code):
         {'date': '2022-07-17', 'location': 'Serra do Marão', 'area_ha': 185.3, 'duration_hours': 60},
     ]
     
-    # Mock active wildfires
-    active_wildfires = []
-    if distrito_risk >= 4:  # Only show mock active wildfires for high risk districts
-        active_wildfires = [
-            {'location': 'Vale de Cambra', 'start_time': timezone.now() - timezone.timedelta(hours=5), 'status': 'Active', 'area_ha': 12.5},
-            {'location': 'Serra da Freita', 'start_time': timezone.now() - timezone.timedelta(hours=8), 'status': 'Contained', 'area_ha': 8.2},
-        ]
-    
-    # Weather conditions (Mock data for now)
-    weather_conditions = {
-        'temperature': 28.5,
-        'humidity': 35,
-        'wind_speed': 12,
-        'wind_direction': 'NE',
-        'precipitation_chance': 5,
-        'last_rainfall': current_date - timezone.timedelta(days=8),
-    }
-    
     # Prepare context for template
     context = {
         'distrito': distrito,
@@ -433,7 +492,6 @@ def district_detail(request, district_code):
         'distrito_risk': distrito_risk,
         'tomorrow_distrito_risk': tomorrow_distrito_risk,
         'risk_distribution': risk_distribution,
-        'historical_risk_data': historical_risk_data,
         'historical_wildfires': historical_wildfires,
         'active_wildfires': active_wildfires,
         'weather_conditions': weather_conditions,
