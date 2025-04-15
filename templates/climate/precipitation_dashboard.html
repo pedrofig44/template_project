@@ -13,20 +13,18 @@
         </div>
         <div class="col-md-6 text-end">
             <!-- Weather Station Selector -->
-            <div class="dropdown d-inline-block">
+                            <div class="dropdown d-inline-block">
                 <button class="btn btn-primary dropdown-toggle" type="button" id="stationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     {% if selected_station %}{{ selected_station.name }}{% else %}Select Station{% endif %}
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="stationDropdown" style="max-height: 300px; overflow-y: auto;">
                     {% for station in stations %}
-                    <li><a class="dropdown-item {% if selected_station.station_id == station.station_id %}active{% endif %}" 
-                          href="{% url 'climate:precipitation_dashboard' %}?station={{ station.station_id }}"
-                          hx-get="{% url 'climate:precipitation_dashboard' %}?station={{ station.station_id }}&range={{ time_range }}"
-                          hx-target="#dashboard-content"
-                          hx-swap="innerHTML"
-                          hx-trigger="click">
-                        {{ station.name }}
-                    </a></li>
+                    <li>
+                        <a class="dropdown-item {% if selected_station.station_id == station.station_id %}active{% endif %}" 
+                           href="{% url 'climate:precipitation_dashboard' %}?station={{ station.station_id }}&range={{ time_range }}">
+                            {{ station.name }}
+                        </a>
+                    </li>
                     {% empty %}
                     <li><a class="dropdown-item disabled" href="#">No stations available</a></li>
                     {% endfor %}

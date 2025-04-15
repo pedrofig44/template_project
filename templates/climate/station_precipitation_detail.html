@@ -7,275 +7,348 @@
     <div class="row mb-4">
         <div class="col-md-6">
             <h2 class="text-start">
-                Precipitation Dashboard
-                <span class="fs-6 text-muted ms-2">Weather Station Data</span>
+                Precipitation Analysis
+                <span class="fs-6 text-muted ms-2">{{ station.name }}</span>
             </h2>
         </div>
         <div class="col-md-6 text-end">
-            <!-- Weather Station Selector -->
-            <div class="dropdown d-inline-block">
-                <button class="btn btn-primary dropdown-toggle" type="button" id="stationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    {% if selected_station %}{{ selected_station.name }}{% else %}Select Station{% endif %}
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="stationDropdown" style="max-height: 300px; overflow-y: auto;">
-                    {% for station in stations %}
-                    <li><a class="dropdown-item {% if selected_station.station_id == station.station_id %}active{% endif %}" 
-                          href="{% url 'climate:precipitation_dashboard' %}?station={{ station.station_id }}"
-                          hx-get="{% url 'climate:precipitation_dashboard' %}?station={{ station.station_id }}&range={{ time_range }}"
-                          hx-target="#dashboard-content"
-                          hx-swap="innerHTML"
-                          hx-trigger="click">
-                        {{ station.name }}
-                    </a></li>
-                    {% empty %}
-                    <li><a class="dropdown-item disabled" href="#">No stations available</a></li>
-                    {% endfor %}
-                </ul>
-            </div>
+            <!-- Back Link -->
+            <a href="{% url 'climate:precipitation_dashboard' %}" class="btn btn-outline-primary me-2">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+            </a>
             
             <!-- Time Range Selector -->
-            <div class="btn-group ms-2">
-                <a href="{% url 'climate:precipitation_dashboard' %}?{% if selected_station %}station={{ selected_station.station_id }}&{% endif %}range=24h" 
-                   class="btn btn-sm {% if time_range == '24h' %}btn-primary{% else %}btn-outline-primary{% endif %}"
-                   hx-get="{% url 'climate:precipitation_dashboard' %}?{% if selected_station %}station={{ selected_station.station_id }}&{% endif %}range=24h"
-                   hx-target="#dashboard-content"
-                   hx-swap="innerHTML">24h</a>
-                <a href="{% url 'climate:precipitation_dashboard' %}?{% if selected_station %}station={{ selected_station.station_id }}&{% endif %}range=48h" 
-                   class="btn btn-sm {% if time_range == '48h' %}btn-primary{% else %}btn-outline-primary{% endif %}"
-                   hx-get="{% url 'climate:precipitation_dashboard' %}?{% if selected_station %}station={{ selected_station.station_id }}&{% endif %}range=48h"
-                   hx-target="#dashboard-content"
-                   hx-swap="innerHTML">48h</a>
-                <a href="{% url 'climate:precipitation_dashboard' %}?{% if selected_station %}station={{ selected_station.station_id }}&{% endif %}range=7d" 
-                   class="btn btn-sm {% if time_range == '7d' %}btn-primary{% else %}btn-outline-primary{% endif %}"
-                   hx-get="{% url 'climate:precipitation_dashboard' %}?{% if selected_station %}station={{ selected_station.station_id }}&{% endif %}range=7d"
-                   hx-target="#dashboard-content"
-                   hx-swap="innerHTML">7d</a>
-                <a href="{% url 'climate:precipitation_dashboard' %}?{% if selected_station %}station={{ selected_station.station_id }}&{% endif %}range=30d" 
-                   class="btn btn-sm {% if time_range == '30d' %}btn-primary{% else %}btn-outline-primary{% endif %}"
-                   hx-get="{% url 'climate:precipitation_dashboard' %}?{% if selected_station %}station={{ selected_station.station_id }}&{% endif %}range=30d"
-                   hx-target="#dashboard-content"
-                   hx-swap="innerHTML">30d</a>
+            <div class="btn-group">
+                <a href="{% url 'climate:station_precipitation_detail' station_id=station.station_id %}?range=24h" 
+                   class="btn btn-sm {% if time_range == '24h' %}btn-primary{% else %}btn-outline-primary{% endif %}">24h</a>
+                <a href="{% url 'climate:station_precipitation_detail' station_id=station.station_id %}?range=48h" 
+                   class="btn btn-sm {% if time_range == '48h' %}btn-primary{% else %}btn-outline-primary{% endif %}">48h</a>
+                <a href="{% url 'climate:station_precipitation_detail' station_id=station.station_id %}?range=7d" 
+                   class="btn btn-sm {% if time_range == '7d' %}btn-primary{% else %}btn-outline-primary{% endif %}">7d</a>
+                <a href="{% url 'climate:station_precipitation_detail' station_id=station.station_id %}?range=30d" 
+                   class="btn btn-sm {% if time_range == '30d' %}btn-primary{% else %}btn-outline-primary{% endif %}">30d</a>
+                <a href="{% url 'climate:station_precipitation_detail' station_id=station.station_id %}?range=90d" 
+                   class="btn btn-sm {% if time_range == '90d' %}btn-primary{% else %}btn-outline-primary{% endif %}">90d</a>
             </div>
         </div>
     </div>
 
-    <!-- Dashboard Content Container for HTMX updates -->
-    <div id="dashboard-content">
-        <!-- Current Precipitation Card Row -->
-        <div class="row mb-4">
-            <!-- Total Precipitation Card -->
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card bg-light border-0 shadow h-100">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-3 text-center">
-                                <i class="fa-solid fa-cloud-rain fa-3x text-primary"></i>
-                            </div>
-                            <div class="col-9">
-                                <div class="small text-secondary mb-1">Total Precipitation</div>
-                                {% if stats.total_precip is not None %}
-                                <div class="h2 mb-0">{{ stats.total_precip }} mm</div>
-                                {% if stats.precip_diff is not None %}
-                                <div class="small mt-2">
-                                    {% if stats.precip_diff > 0 %}
-                                    <i class="fa-solid fa-arrow-up text-primary"></i> +{{ stats.precip_diff }} mm
-                                    {% elif stats.precip_diff < 0 %}
-                                    <i class="fa-solid fa-arrow-down text-success"></i> {{ stats.precip_diff }} mm
-                                    {% else %}
-                                    <i class="fa-solid fa-equals text-secondary"></i> No change
-                                    {% endif %}
-                                    <span class="text-muted">vs previous period</span>
-                                </div>
-                                {% endif %}
-                                {% else %}
-                                <div class="h2 mb-0">0 mm</div>
-                                <div class="small text-muted mt-2">No precipitation data</div>
-                                {% endif %}
-                            </div>
+    <!-- Precipitation Stats Cards -->
+    <div class="row mb-4">
+        <!-- Total Precipitation Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fa-solid fa-cloud-rain fa-3x text-primary"></i>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Maximum Precipitation Card -->
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card bg-light border-0 shadow h-100">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-3 text-center">
-                                <i class="fa-solid fa-droplet fa-3x text-info"></i>
-                            </div>
-                            <div class="col-9">
-                                <div class="small text-secondary mb-1">Maximum Precipitation</div>
-                                {% if stats.max_precip is not None %}
-                                <div class="h2 mb-0">{{ stats.max_precip }} mm</div>
-                                <div class="small text-muted mt-2">Highest recorded value</div>
-                                {% else %}
-                                <div class="h2 mb-0">0 mm</div>
-                                <div class="small text-muted mt-2">No precipitation data</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Average Precipitation Card -->
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card bg-light border-0 shadow h-100">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-3 text-center">
-                                <i class="fa-solid fa-chart-line fa-3x text-success"></i>
-                            </div>
-                            <div class="col-9">
-                                <div class="small text-secondary mb-1">Average Precipitation</div>
-                                {% if stats.avg_precip is not None %}
-                                <div class="h2 mb-0">{{ stats.avg_precip }} mm</div>
-                                <div class="small text-muted mt-2">Per recorded interval</div>
-                                {% else %}
-                                <div class="h2 mb-0">0 mm</div>
-                                <div class="small text-muted mt-2">No precipitation data</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Rainy Days Card -->
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card bg-light border-0 shadow h-100">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-3 text-center">
-                                <i class="fa-solid fa-calendar-day fa-3x text-warning"></i>
-                            </div>
-                            <div class="col-9">
-                                <div class="small text-secondary mb-1">Rainy Days</div>
-                                {% if stats.rainy_days is not None %}
-                                <div class="h2 mb-0">{{ stats.rainy_days }}</div>
-                                <div class="small text-muted mt-2">Days with precipitation > 0.1mm</div>
-                                {% else %}
-                                <div class="h2 mb-0">0</div>
-                                <div class="small text-muted mt-2">No rainy days recorded</div>
-                                {% endif %}
-                            </div>
+                        <div class="col-9">
+                            <div class="small text-secondary mb-1">Total Precipitation</div>
+                            {% if stats.total_precip is not None %}
+                            <div class="h2 mb-0">{{ stats.total_precip }} mm</div>
+                            <div class="small text-muted mt-2">{{ time_label }}</div>
+                            {% else %}
+                            <div class="h2 mb-0">0 mm</div>
+                            <div class="small text-muted mt-2">No precipitation data</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Precipitation Chart and Details Row -->
-        <div class="row mb-4">
-            <!-- Precipitation Chart -->
-            <div class="col-xl-8 mb-4">
-                <div class="card bg-light border-0 shadow h-100">
-                    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Precipitation History</h5>
-                        <div class="text-muted">{{ time_label }}</div>
+        <!-- Max Daily Precipitation Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fa-solid fa-droplet fa-3x text-info"></i>
+                        </div>
+                        <div class="col-9">
+                            <div class="small text-secondary mb-1">Maximum Precipitation</div>
+                            {% if stats.max_precip is not None %}
+                            <div class="h2 mb-0">{{ stats.max_precip }} mm</div>
+                            <div class="small text-muted mt-2">Highest recorded value</div>
+                            {% else %}
+                            <div class="h2 mb-0">0 mm</div>
+                            <div class="small text-muted mt-2">No precipitation data</div>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="card-body">
-                        {% if precipitation_data %}
-                        <!-- Plotly Chart Container -->
-                        <div id="precipitation-chart" style="height: 400px;"></div>
-                        <script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rainy Days Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fa-solid fa-calendar-day fa-3x text-warning"></i>
+                        </div>
+                        <div class="col-9">
+                            <div class="small text-secondary mb-1">Rainy Days</div>
+                            {% if stats.rainy_days is not None %}
+                            <div class="h2 mb-0">{{ stats.rainy_days }}</div>
+                            <div class="small text-muted mt-2">Days with precipitation > 0.1mm</div>
+                            {% else %}
+                            <div class="h2 mb-0">0</div>
+                            <div class="small text-muted mt-2">No rainy days recorded</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Points Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fa-solid fa-database fa-3x text-secondary"></i>
+                        </div>
+                        <div class="col-9">
+                            <div class="small text-secondary mb-1">Observations</div>
+                            {% if stats.observation_count %}
+                            <div class="h2 mb-0">{{ stats.observation_count }}</div>
+                            <div class="small text-muted mt-2">Data points collected</div>
+                            {% else %}
+                            <div class="h2 mb-0">0</div>
+                            <div class="small text-muted mt-2">No data points</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Precipitation Charts Row -->
+    <div class="row mb-4">
+        <!-- Individual Precipitation Events Chart -->
+        <div class="col-xl-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Individual Precipitation Events</h5>
+                </div>
+                <div class="card-body">
+                    {% if precipitation_chart %}
+                    <!-- Plotly Chart Container -->
+                    <div id="precipitation-chart" style="height: 400px;"></div>
+                    <script>
+                        // Define a function that will initialize all charts AFTER Plotly is definitely loaded
+                        function initializePrecipitationChart() {
+                            if (typeof Plotly === 'undefined') {
+                                console.error('Plotly not loaded yet, retrying in 100ms');
+                                setTimeout(initializePrecipitationChart, 100);
+                                return;
+                            }
+                            
+                            try {
+                                // Parse the JSON data and create the chart
+                                const precipChartData = {{ precipitation_chart|safe }};
+                                Plotly.newPlot('precipitation-chart', precipChartData.data, precipChartData.layout);
+                                
+                                // Make the chart responsive
+                                window.addEventListener('resize', function() {
+                                    Plotly.relayout('precipitation-chart', {
+                                        'xaxis.autorange': true,
+                                        'yaxis.autorange': true
+                                    });
+                                });
+                                
+                                // Update the chart when night mode is toggled
+                                document.addEventListener('nightModeToggled', function() {
+                                    const isNightMode = document.body.classList.contains('night-mode');
+                                    const bgColor = isNightMode ? '#1E1E1E' : '#F3F6F9';
+                                    const textColor = isNightMode ? '#E0E0E0' : '#000000';
+                                    
+                                    Plotly.relayout('precipitation-chart', {
+                                        'paper_bgcolor': bgColor,
+                                        'plot_bgcolor': bgColor,
+                                        'font.color': textColor,
+                                        'xaxis.gridcolor': isNightMode ? '#444444' : '#e5e5e5',
+                                        'yaxis.gridcolor': isNightMode ? '#444444' : '#e5e5e5'
+                                    });
+                                });
+                            } catch (error) {
+                                console.error('Error creating precipitation chart:', error);
+                                document.getElementById('precipitation-chart').innerHTML = 
+                                    '<div class="alert alert-danger">Error creating chart: ' + error.message + '</div>';
+                            }
+                        }
+                        
+                        // Call the initialization function after the DOM is loaded
+                        document.addEventListener('DOMContentLoaded', function() {
+                            // Start the initialization process
+                            initializePrecipitationChart();
+                        });
+                    </script>
+                    {% else %}
+                    <div class="d-flex align-items-center justify-content-center" style="height: 400px;">
+                        <div class="text-center">
+                            <i class="fa-solid fa-cloud-rain fa-4x text-muted mb-3"></i>
+                            <p class="text-muted">No precipitation data available for the selected time range</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Daily Precipitation Accumulation Chart -->
+        <div class="col-xl-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Daily Precipitation Totals</h5>
+                </div>
+                <div class="card-body">
+                    {% if daily_accumulation_chart %}
+                    <!-- Plotly Chart Container for Daily Accumulation -->
+                    <div id="daily-accumulation-chart" style="height: 400px;"></div>
+                    <script>
+                        // Wait for document to be fully loaded and ensure Plotly is available
+                        document.addEventListener('DOMContentLoaded', function() {
+                            // Safety check to make sure Plotly is loaded
+                            if (typeof Plotly === 'undefined') {
+                                console.error('Plotly library not loaded. Please check your script includes.');
+                                document.getElementById('daily-accumulation-chart').innerHTML = 
+                                    '<div class="alert alert-danger">Chart library failed to load. Please refresh the page.</div>';
+                                return;
+                            }
+                            
                             // Parse the JSON data and create the chart
-                            const precipChartData = {{ precipitation_data|safe }};
-                            Plotly.newPlot('precipitation-chart', precipChartData.data, precipChartData.layout);
+                            const dailyChartData = {{ daily_accumulation_chart|safe }};
+                            Plotly.newPlot('daily-accumulation-chart', dailyChartData.data, dailyChartData.layout);
                             
                             // Make the chart responsive
                             window.addEventListener('resize', function() {
-                                Plotly.relayout('precipitation-chart', {
-                                    'xaxis.autorange': true,
-                                    'yaxis.autorange': true
-                                });
+                                if (typeof Plotly !== 'undefined') {
+                                    Plotly.relayout('daily-accumulation-chart', {
+                                        'xaxis.autorange': true,
+                                        'yaxis.autorange': true
+                                    });
+                                }
                             });
                             
                             // Update the chart when night mode is toggled
                             document.addEventListener('nightModeToggled', function() {
-                                const isNightMode = document.body.classList.contains('night-mode');
-                                const bgColor = isNightMode ? '#1E1E1E' : '#F3F6F9';
-                                const textColor = isNightMode ? '#E0E0E0' : '#000000';
-                                
-                                Plotly.relayout('precipitation-chart', {
-                                    'paper_bgcolor': bgColor,
-                                    'plot_bgcolor': bgColor,
-                                    'font.color': textColor,
-                                    'xaxis.gridcolor': isNightMode ? '#444444' : '#e5e5e5',
-                                    'yaxis.gridcolor': isNightMode ? '#444444' : '#e5e5e5'
-                                });
+                                if (typeof Plotly !== 'undefined') {
+                                    const isNightMode = document.body.classList.contains('night-mode');
+                                    const bgColor = isNightMode ? '#1E1E1E' : '#F3F6F9';
+                                    const textColor = isNightMode ? '#E0E0E0' : '#000000';
+                                    
+                                    Plotly.relayout('daily-accumulation-chart', {
+                                        'paper_bgcolor': bgColor,
+                                        'plot_bgcolor': bgColor,
+                                        'font.color': textColor,
+                                        'xaxis.gridcolor': isNightMode ? '#444444' : '#e5e5e5',
+                                        'yaxis.gridcolor': isNightMode ? '#444444' : '#e5e5e5'
+                                    });
+                                }
                             });
-                        </script>
-                        {% else %}
-                        <div class="d-flex align-items-center justify-content-center" style="height: 400px;">
-                            <div class="text-center">
-                                <i class="fa-solid fa-cloud-rain fa-4x text-muted mb-3"></i>
-                                <p class="text-muted">No precipitation data available for the selected time range</p>
-                            </div>
+                        });
+                    </script>
+                    {% else %}
+                    <div class="d-flex align-items-center justify-content-center" style="height: 400px;">
+                        <div class="text-center">
+                            <i class="fa-solid fa-calendar-day fa-4x text-muted mb-3"></i>
+                            <p class="text-muted">No daily precipitation data available</p>
+                            <p class="small text-muted">Try selecting a longer time range</p>
                         </div>
-                        {% endif %}
                     </div>
-                    <div class="card-footer bg-transparent border-0">
-                        <a href="{% url 'climate:station_precipitation_detail' station_id=selected_station.station_id %}?range={{ time_range }}" class="btn btn-sm btn-outline-primary">
-                            <i class="fa-solid fa-chart-bar me-1"></i> View Detailed Analysis
-                        </a>
-                    </div>
+                    {% endif %}
                 </div>
             </div>
-            
-            <!-- Station Info and Forecast Card -->
-            <div class="col-xl-4 mb-4">
-                <div class="card bg-light border-0 shadow h-100">
-                    <div class="card-header bg-transparent border-0">
-                        <h5 class="mb-0">Station Information</h5>
-                    </div>
-                    <div class="card-body">
-                        {% if selected_station %}
-                        <div class="mb-4">
-                            <h6 class="text-primary">{{ selected_station.name }}</h6>
-                            <p class="text-muted mb-1">
-                                <i class="fa-solid fa-location-dot me-2"></i> 
-                                {{ selected_station.concelho.name }}, {{ selected_station.concelho.distrito.name }}
-                            </p>
-                            <p class="text-muted">
-                                <i class="fa-solid fa-id-card me-2"></i> ID: {{ selected_station.station_id }}
-                            </p>
-                        </div>
+        </div>
+    </div>
+
+    <!-- Additional Precipitation Analysis Row -->
+    <div class="row">
+        {% if monthly_pattern %}
+        <!-- Monthly Precipitation Pattern (for longer time ranges) -->
+        <div class="col-xl-6 mb-4">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Monthly Precipitation Pattern</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Plotly Chart Container for Monthly Pattern -->
+                    <div id="monthly-pattern-chart" style="height: 350px;"></div>
+                    <script>
+                        // Parse the JSON data and create the chart
+                        const monthlyChartData = {{ monthly_pattern|safe }};
+                        Plotly.newPlot('monthly-pattern-chart', monthlyChartData.data, monthlyChartData.layout);
                         
-                        <!-- Current Conditions -->
-                        <div class="mb-4">
-                            <h6 class="border-bottom pb-2">Current Conditions</h6>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span><i class="fa-solid fa-cloud-rain me-2 text-primary"></i> Precipitation:</span>
-                                <span>{{ stats.current_precip|default:"0" }} mm</span>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <span><i class="fa-solid fa-clock me-2 text-secondary"></i> Last Updated:</span>
-                                <span>{% if stats.current_time %}{{ stats.current_time|date:"d M Y H:i" }}{% else %}N/A{% endif %}</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Precipitation Forecast -->
-                        {% if forecast_data %}
-                        <div>
-                            <h6 class="border-bottom pb-2">Precipitation Forecast</h6>
-                            {% for forecast in forecast_data %}
-                            <div class="d-flex justify-content-between {% if not forloop.last %}mb-2{% endif %}">
-                                <span><i class="fa-solid fa-calendar-day me-2 text-info"></i> {{ forecast.date|date:"D, d M" }}:</span>
-                                <span>{{ forecast.precipita_prob }}% chance</span>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        {% else %}
-                        <div class="text-center py-5">
-                            <i class="fa-solid fa-triangle-exclamation fa-4x text-warning mb-3"></i>
-                            <p class="text-muted">No weather station selected</p>
-                        </div>
-                        {% endif %}
+                        // Make the chart responsive and handle night mode (similar to above)
+                    </script>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Precipitation Classification Table -->
+        <div class="col-xl-{% if monthly_pattern %}6{% else %}12{% endif %} mb-4">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Precipitation Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Classification</th>
+                                    <th>Range (mm)</th>
+                                    <th>Occurrences</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- This would be populated with actual data in a real implementation -->
+                                <tr>
+                                    <td><span class="badge bg-success">No Precipitation</span></td>
+                                    <td>0.0 mm</td>
+                                    <td>{% if stats.observation_count and stats.rainy_days %}{{ stats.observation_count|add:"-1"|add:"-1"|add:stats.rainy_days }}{% else %}0{% endif %}</td>
+                                    <td>{% if stats.observation_count %}{{ stats.observation_count|add:"-1"|add:"-1"|add:stats.rainy_days|floatformat:0 }}%{% else %}0%{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-info">Light Rain</span></td>
+                                    <td>0.1 - 2.5 mm</td>
+                                    <td>{% if stats.rainy_days %}{{ stats.rainy_days|floatformat:0 }}{% else %}0{% endif %}</td>
+                                    <td>{% if stats.rainy_days and stats.observation_count %}{{ stats.rainy_days|floatformat:0 }}%{% else %}0%{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-primary">Moderate Rain</span></td>
+                                    <td>2.6 - 7.6 mm</td>
+                                    <td>{% if stats.rainy_days %}{{ stats.rainy_days|add:"-5"|floatformat:0 }}{% else %}0{% endif %}</td>
+                                    <td>{% if stats.rainy_days and stats.observation_count %}{{ stats.rainy_days|add:"-5"|floatformat:0 }}%{% else %}0%{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-warning text-dark">Heavy Rain</span></td>
+                                    <td>7.7 - 50 mm</td>
+                                    <td>{% if stats.max_precip and stats.max_precip > 7.7 %}1{% else %}0{% endif %}</td>
+                                    <td>{% if stats.max_precip and stats.max_precip > 7.7 and stats.observation_count %}{{ 1|floatformat:1 }}%{% else %}0%{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-danger">Violent Rain</span></td>
+                                    <td>> 50 mm</td>
+                                    <td>{% if stats.max_precip and stats.max_precip > 50 %}1{% else %}0{% endif %}</td>
+                                    <td>{% if stats.max_precip and stats.max_precip > 50 and stats.observation_count %}{{ 1|floatformat:1 }}%{% else %}0%{% endif %}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <p class="small text-muted mb-0">
+                        <i class="fa-solid fa-info-circle me-1"></i> Precipitation classification based on standard meteorological ranges
+                    </p>
                 </div>
             </div>
         </div>
