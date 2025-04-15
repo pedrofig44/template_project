@@ -1,14 +1,14 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.utils import timezone
-from django.db.models import Avg, Max, Min
+from django.db.models import Avg, Max, Min, Sum
 from datetime import timedelta
 import json
 import polars as pl
 
 from location.models import WeatherStation, City, Concelho
 from climate.models import StationObservation, DailyForecast
-from dashboard.utils import generate_line_chart
+from dashboard.utils import generate_line_chart, generate_bar_chart, generate_combined_chart
 
 from django.core.serializers import serialize
 
@@ -752,5 +752,321 @@ def wind_chart_data(request):
         chart_data['timestamps'].append(obs.timestamp.isoformat())
         chart_data['wind_speeds'].append(round(obs.wind_speed_kmh, 1))
         chart_data['directions'].append(obs.wind_direction)
+    
+    return JsonResponse(chart_data)
+
+
+def precipitation_dashboard(request):
+    """
+    Main precipitation dashboard view showing precipitation data across all stations
+    """
+    # Get all active weather stations
+    stations = WeatherStation.objects.all().order_by('name')
+    
+    # Get selected station or default to first station
+    selected_station_id = request.GET.get('station')
+    if selected_station_id:
+        selected_station = get_object_or_404(WeatherStation, station_id=selected_station_id)
+    else:
+        selected_station = stations.first()
+        
+    # Get the time range (default to last 7 days for precipitation, as it's less frequent than temperature)
+    time_range = request.GET.get('range', '7d')
+    
+    # Calculate time range
+    now = timezone.now()
+    if time_range == '24h':
+        start_time = now - timedelta(hours=24)
+        time_label = "Last 24 Hours"
+    elif time_range == '48h':
+        start_time = now - timedelta(hours=48)
+        time_label = "Last 48 Hours"
+    elif time_range == '7d':
+        start_time = now - timedelta(days=7)
+        time_label = "Last 7 Days"
+    elif time_range == '30d':
+        start_time = now - timedelta(days=30)
+        time_label = "Last 30 Days"
+    else:
+        start_time = now - timedelta(days=7)
+        time_label = "Last 7 Days"
+    
+    # Get precipitation data for the selected station
+    precipitation_data = None
+    stats = {
+        'total_precip': None,
+        'max_precip': None,
+        'avg_precip': None,
+        'rainy_days': None,
+        'current_precip': None,
+        'precip_trend': None,
+    }
+    
+    if selected_station:
+        # Get observations for the selected time range
+        observations = StationObservation.objects.filter(
+            station=selected_station,
+            timestamp__gte=start_time,
+            precipitation__gt=-90  # Filter out invalid readings (-99)
+        ).order_by('timestamp')
+        
+        if observations.exists():
+            # Calculate stats
+            stats_data = observations.aggregate(
+                avg_precip=Avg('precipitation'),
+                max_precip=Max('precipitation'),
+                total_precip=Sum('precipitation')
+            )
+            
+            stats['avg_precip'] = round(stats_data['avg_precip'], 1) if stats_data['avg_precip'] else None
+            stats['max_precip'] = round(stats_data['max_precip'], 1) if stats_data['max_precip'] else None
+            stats['total_precip'] = round(stats_data['total_precip'], 1) if stats_data['total_precip'] else None
+            
+            # Count rainy days (days with precipitation > 0.1mm)
+            # Group by date and count days with precipitation
+            rainy_days = observations.filter(precipitation__gt=0.1).dates('timestamp', 'day').count()
+            stats['rainy_days'] = rainy_days
+            
+            # Get current precipitation (latest observation)
+            latest_obs = observations.last()
+            stats['current_precip'] = round(latest_obs.precipitation, 1) if latest_obs else None
+            
+            # Calculate precipitation trend (comparing to previous period's total)
+            previous_period_start = start_time - (start_time - now)  # Same duration as current period
+            previous_period_total = StationObservation.objects.filter(
+                station=selected_station,
+                timestamp__gte=previous_period_start,
+                timestamp__lt=start_time,
+                precipitation__gt=-90
+            ).aggregate(total=Sum('precipitation'))['total']
+            
+            if previous_period_total and stats['total_precip']:
+                diff = stats['total_precip'] - previous_period_total
+                if diff > 1.0:
+                    stats['precip_trend'] = 'increasing'
+                elif diff < -1.0:
+                    stats['precip_trend'] = 'decreasing'
+                else:
+                    stats['precip_trend'] = 'stable'
+                stats['precip_diff'] = round(diff, 1)
+            
+            # Convert to DataFrame for plotting
+            if len(observations) > 0:
+                # For precipitation, a bar chart might be more appropriate
+                data = list(observations.values('timestamp', 'precipitation'))
+                df_pl = pl.DataFrame(data)
+                
+                # Generate bar chart using dashboard utils
+                chart_title = f"Precipitation for {selected_station.name}"
+                precipitation_data = generate_bar_chart(
+                    df_pl, 
+                    title=chart_title,
+                    x_axis="Time", 
+                    y_axis="Precipitation (mm)"
+                )
+    
+    # Get forecast data for comparison
+    forecast_data = None
+    if selected_station and selected_station.concelho:
+        # Find a city in the same concelho
+        city = City.objects.filter(concelho=selected_station.concelho).first()
+        
+        if city:
+            # Get forecasts for the next few days
+            forecasts = DailyForecast.objects.filter(
+                city=city,
+                forecast_date__gte=now.date()
+            ).order_by('forecast_date')[:5]  # Next 5 days
+            
+            if forecasts.exists():
+                # Prepare forecast data for the template
+                forecast_data = []
+                for forecast in forecasts:
+                    forecast_data.append({
+                        'date': forecast.forecast_date,
+                        'precipita_prob': forecast.precipita_prob,
+                        'forecast_item': forecast
+                    })
+    
+    # Prepare context
+    context = {
+        'stations': stations,
+        'selected_station': selected_station,
+        'time_range': time_range,
+        'time_label': time_label,
+        'precipitation_data': precipitation_data,
+        'stats': stats,
+        'forecast_data': forecast_data,
+    }
+    
+    return render(request, 'climate/precipitation_dashboard.html', context)
+
+def station_precipitation_detail(request, station_id):
+    """
+    Detailed view for a specific weather station's precipitation data
+    """
+    # Get the station
+    station = get_object_or_404(WeatherStation, station_id=station_id)
+    
+    # Get time range (default to last 30 days for precipitation details)
+    time_range = request.GET.get('range', '30d')
+    
+    # Calculate start time based on range
+    now = timezone.now()
+    if time_range == '24h':
+        start_time = now - timedelta(hours=24)
+        time_label = "Last 24 Hours"
+    elif time_range == '48h':
+        start_time = now - timedelta(hours=48)
+        time_label = "Last 48 Hours"
+    elif time_range == '7d':
+        start_time = now - timedelta(days=7)
+        time_label = "Last 7 Days"
+    elif time_range == '30d':
+        start_time = now - timedelta(days=30)
+        time_label = "Last 30 Days"
+    elif time_range == '90d':
+        start_time = now - timedelta(days=90)
+        time_label = "Last 90 Days"
+    else:
+        start_time = now - timedelta(days=30)
+        time_label = "Last 30 Days"
+    
+    # Get the observations
+    observations = StationObservation.objects.filter(
+        station=station,
+        timestamp__gte=start_time,
+        precipitation__gt=-90  # Filter out invalid readings
+    ).order_by('timestamp')
+    
+    # Calculate statistics
+    stats = {}
+    if observations.exists():
+        # Basic stats
+        stats_data = observations.aggregate(
+            avg_precip=Avg('precipitation'),
+            max_precip=Max('precipitation'),
+            total_precip=Sum('precipitation')
+        )
+        
+        stats = {
+            'avg_precip': round(stats_data['avg_precip'], 1) if stats_data['avg_precip'] else None,
+            'max_precip': round(stats_data['max_precip'], 1) if stats_data['max_precip'] else None,
+            'total_precip': round(stats_data['total_precip'], 1) if stats_data['total_precip'] else None,
+            'observation_count': observations.count(),
+            'rainy_days': observations.filter(precipitation__gt=0.1).dates('timestamp', 'day').count()
+        }
+        
+        # Get latest precipitation
+        latest_obs = observations.last()
+        if latest_obs:
+            stats['current_precip'] = round(latest_obs.precipitation, 1)
+            stats['current_time'] = latest_obs.timestamp
+    
+    # Generate precipitation charts
+    precipitation_chart = None
+    daily_accumulation_chart = None
+    
+    if observations.exists():
+        # Convert directly to polars DataFrame for the main chart
+        data = list(observations.values('timestamp', 'precipitation'))
+        df_pl = pl.DataFrame(data)
+        
+        chart_title = f"Precipitation History for {station.name}"
+        precipitation_chart = generate_bar_chart(
+            df_pl, 
+            title=chart_title,
+            x_axis="Date/Time", 
+            y_axis="Precipitation (mm)"
+        )
+        
+        # Create daily accumulation data (sum precipitation by day)
+        # This is best done with Django's database aggregation
+        daily_data = observations.values('timestamp__date').annotate(
+            daily_sum=Sum('precipitation')
+        ).order_by('timestamp__date')
+        
+        # Convert to polars DataFrame for the daily accumulation chart
+        if daily_data:
+            daily_list = [
+                {'timestamp': item['timestamp__date'], 'daily_precip': item['daily_sum']} 
+                for item in daily_data
+            ]
+            df_daily = pl.DataFrame(daily_list)
+            
+            daily_chart_title = f"Daily Precipitation for {station.name}"
+            daily_accumulation_chart = generate_bar_chart(
+                df_daily,
+                title=daily_chart_title,
+                x_axis="Date",
+                y_axis="Daily Precipitation (mm)"
+            )
+    
+    # Generate monthly precipitation patterns (optional, for longer time ranges)
+    monthly_pattern = None
+    if time_range in ['90d', '30d'] and observations.exists():
+        # This would aggregate precipitation by month
+        # Implementation depends on the specific visualization needs
+        pass
+    
+    # Prepare context
+    context = {
+        'station': station,
+        'time_range': time_range,
+        'time_label': time_label,
+        'stats': stats,
+        'precipitation_chart': precipitation_chart,
+        'daily_accumulation_chart': daily_accumulation_chart,
+        'monthly_pattern': monthly_pattern
+    }
+    
+    return render(request, 'climate/station_precipitation_detail.html', context)
+
+def precipitation_chart_data(request):
+    """
+    API endpoint to get precipitation chart data for AJAX requests
+    """
+    station_id = request.GET.get('station')
+    time_range = request.GET.get('range', '7d')
+    
+    # Validate input
+    if not station_id:
+        return JsonResponse({'error': 'Station ID is required'}, status=400)
+    
+    # Get station
+    try:
+        station = WeatherStation.objects.get(station_id=station_id)
+    except WeatherStation.DoesNotExist:
+        return JsonResponse({'error': 'Station not found'}, status=404)
+    
+    # Calculate time range
+    now = timezone.now()
+    if time_range == '24h':
+        start_time = now - timedelta(hours=24)
+    elif time_range == '48h':
+        start_time = now - timedelta(hours=48)
+    elif time_range == '7d':
+        start_time = now - timedelta(days=7)
+    elif time_range == '30d':
+        start_time = now - timedelta(days=30)
+    else:
+        start_time = now - timedelta(days=7)
+    
+    # Get observations
+    observations = StationObservation.objects.filter(
+        station=station,
+        timestamp__gte=start_time,
+        precipitation__gt=-90
+    ).order_by('timestamp')
+    
+    # Prepare data for chart
+    chart_data = {
+        'timestamps': [],
+        'precipitation': []
+    }
+    
+    for obs in observations:
+        chart_data['timestamps'].append(obs.timestamp.isoformat())
+        chart_data['precipitation'].append(round(obs.precipitation, 1))
     
     return JsonResponse(chart_data)
