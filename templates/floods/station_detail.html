@@ -1,0 +1,365 @@
+{% extends 'includes/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid pt-4 px-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="text-start">
+                {{ station.name }}
+                <span class="fs-6 text-muted ms-2">Water Station</span>
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="btn-group me-2">
+                <a href="{% url 'floods:flood_dashboard' %}" class="btn btn-outline-primary">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+                <a href="{% url 'floods:water_body_detail' water_body_id=water_body.id %}" class="btn btn-outline-primary">
+                    View Water Body
+                </a>
+            </div>
+            <div class="dropdown d-inline-block">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="timeRangeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    {{ time_label }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="timeRangeDropdown">
+                    <li><a class="dropdown-item {% if time_range == '24h' %}active{% endif %}" href="?range=24h">Last 24 Hours</a></li>
+                    <li><a class="dropdown-item {% if time_range == '48h' %}active{% endif %}" href="?range=48h">Last 48 Hours</a></li>
+                    <li><a class="dropdown-item {% if time_range == '7d' %}active{% endif %}" href="?range=7d">Last 7 Days</a></li>
+                    <li><a class="dropdown-item {% if time_range == '30d' %}active{% endif %}" href="?range=30d">Last 30 Days</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Station Info and Current Levels -->
+    <div class="row mb-4">
+        <!-- Station Info Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Station Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="fw-bold">{{ station.name }}</h6>
+                        <p class="mb-0 small">ID: {{ station.station_id }}</p>
+                        <p class="mb-0 small">Type: {{ station.get_measurement_type_display }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="fw-bold">Water Body</h6>
+                        <p class="mb-0">{{ water_body.name }} ({{ water_body.get_water_body_type_display }})</p>
+                        <p class="small mb-0">{{ water_body.concelho.name }}, {{ water_body.concelho.distrito.name }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="fw-bold">Reference Levels</h6>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <span class="d-block small text-muted">Normal</span>
+                                <span>{{ water_body.normal_level|default:"N/A" }} m</span>
+                            </div>
+                            <div>
+                                <span class="d-block small text-muted">Warning</span>
+                                <span>{{ water_body.warning_level|default:"N/A" }} m</span>
+                            </div>
+                            <div>
+                                <span class="d-block small text-muted">Danger</span>
+                                <span>{{ water_body.danger_level|default:"N/A" }} m</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="fw-bold">API Configuration</h6>
+                        <p class="mb-0 small">Level Channel: {% if station.level_channel_id %}{{ station.level_channel_id }}{% else %}N/A{% endif %}</p>
+                        <p class="mb-0 small">Flow Channel: {% if station.flow_channel_id %}{{ station.flow_channel_id }}{% else %}N/A{% endif %}</p>
+                    </div>
+                    
+                    <div>
+                        <h6 class="fw-bold">Latest Update</h6>
+                        <p class="mb-0">{{ stats.latest_timestamp|date:"F j, Y" }} at {{ stats.latest_timestamp|time:"H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Current Levels Card -->
+        <div class="col-lg-8 mb-4">
+            <div class="row h-100">
+                <!-- Water Level Card -->
+                {% if station.has_level_capability %}
+                <div class="col-md-6 mb-4">
+                    <div class="card bg-light border-0 shadow h-100">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Current Water Level</h5>
+                            
+                            {% if stats.latest_level is not None %}
+                                <div class="display-1 my-3">{{ stats.latest_level|floatformat:2 }} <span class="fs-4">m</span></div>
+                                
+                                <!-- Status indicator -->
+                                {% if water_body.danger_level and stats.latest_level >= water_body.danger_level %}
+                                    <div class="alert alert-danger">
+                                        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                        <strong>Danger Level Reached</strong>
+                                    </div>
+                                {% elif water_body.warning_level and stats.latest_level >= water_body.warning_level %}
+                                    <div class="alert alert-warning">
+                                        <i class="fa-solid fa-exclamation-circle me-2"></i>
+                                        <strong>Warning Level Reached</strong>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-success">
+                                        <i class="fa-solid fa-check-circle me-2"></i>
+                                        <strong>Normal Level</strong>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Stats -->
+                                <div class="row mt-3">
+                                    <div class="col-6">
+                                        <p class="small text-muted mb-0">Maximum ({{ time_label }})</p>
+                                        <p class="mb-0">{{ stats.max_level|floatformat:2 }} m</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <p class="small text-muted mb-0">Average ({{ time_label }})</p>
+                                        <p class="mb-0">{{ stats.avg_level|floatformat:2 }} m</p>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fa-solid fa-water fa-4x text-muted mb-3"></i>
+                                    <p class="text-muted">No level data available</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Flow Rate Card -->
+                {% if station.has_flow_capability %}
+                <div class="col-md-6 mb-4">
+                    <div class="card bg-light border-0 shadow h-100">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Current Flow Rate</h5>
+                            
+                            {% if stats.latest_flow is not None %}
+                                <div class="display-1 my-3">{{ stats.latest_flow|floatformat:1 }} <span class="fs-4">l/s</span></div>
+                                
+                                <!-- Status indicator (simplified) -->
+                                <div class="alert alert-info">
+                                    <i class="fa-solid fa-tachometer-alt me-2"></i>
+                                    <strong>Flow Data Available</strong>
+                                </div>
+                                
+                                <!-- Stats -->
+                                <div class="row mt-3">
+                                    <div class="col-6">
+                                        <p class="small text-muted mb-0">Maximum ({{ time_label }})</p>
+                                        <p class="mb-0">{{ stats.max_flow|floatformat:1 }} l/s</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <p class="small text-muted mb-0">Average ({{ time_label }})</p>
+                                        <p class="mb-0">{{ stats.avg_flow|floatformat:1 }} l/s</p>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fa-solid fa-tachometer-alt fa-4x text-muted mb-3"></i>
+                                    <p class="text-muted">No flow data available</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- No Measurement Capability Message -->
+                {% if not station.has_level_capability and not station.has_flow_capability %}
+                <div class="col-12">
+                    <div class="card bg-light border-0 shadow h-100">
+                        <div class="card-body text-center py-5">
+                            <i class="fa-solid fa-exclamation-triangle fa-4x text-warning mb-3"></i>
+                            <h5>No Measurement Capability</h5>
+                            <p class="text-muted">This station is not configured for water level or flow measurements.</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Water Level Chart -->
+        {% if water_level_chart %}
+        <div class="col-lg-6 mb-4">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Water Level History</h5>
+                </div>
+                <div class="card-body">
+                    <div id="water-level-chart" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Flow Rate Chart -->
+        {% if flow_rate_chart %}
+        <div class="col-lg-6 mb-4">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Flow Rate History</h5>
+                </div>
+                <div class="card-body">
+                    <div id="flow-rate-chart" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- No Data Message (if no charts) -->
+        {% if not water_level_chart and not flow_rate_chart %}
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-body text-center py-5">
+                    <i class="fa-solid fa-chart-line fa-4x text-muted mb-3"></i>
+                    <h5>No History Data</h5>
+                    <p class="text-muted">There is no historical data available for the selected time period.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Active Warnings and Recent Readings -->
+    <div class="row">
+        <!-- Active Warnings -->
+        <div class="col-lg-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Active Warnings</h5>
+                </div>
+                <div class="card-body">
+                    {% if active_warnings %}
+                        <ul class="list-group list-group-flush">
+                            {% for warning in active_warnings %}
+                            <li class="list-group-item bg-transparent px-0">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ warning.title }}</h6>
+                                    <span class="badge {% if warning.warning_level == 'emergency' %}bg-danger{% elif warning.warning_level == 'warning' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                        {{ warning.get_warning_level_display }}
+                                    </span>
+                                </div>
+                                <p class="mb-1 small">{{ warning.description }}</p>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <small class="text-muted">
+                                        <i class="fa-solid fa-calendar me-1"></i> {{ warning.start_time|date:"M j, H:i" }}
+                                    </small>
+                                    <small class="text-muted">
+                                        Until {{ warning.end_time|date:"M j, H:i" }}
+                                    </small>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-check-circle fa-4x text-success mb-3"></i>
+                            <p class="mb-0">No active warnings</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Readings -->
+        <div class="col-lg-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Recent Readings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    {% if station.has_level_capability %}<th>Water Level</th>{% endif %}
+                                    {% if station.has_flow_capability %}<th>Flow Rate</th>{% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reading in readings|slice:":10" %}
+                                <tr>
+                                    <td>{{ reading.timestamp|date:"M j, H:i" }}</td>
+                                    {% if station.has_level_capability %}
+                                    <td>{% if reading.water_level is not None %}{{ reading.water_level|floatformat:2 }} m{% else %}-{% endif %}</td>
+                                    {% endif %}
+                                    {% if station.has_flow_capability %}
+                                    <td>{% if reading.flow_rate is not None %}{{ reading.flow_rate|floatformat:1 }} l/s{% else %}-{% endif %}</td>
+                                    {% endif %}
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-4">No readings available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if water_level_chart %}
+        // Water Level Chart
+        const waterLevelData = {{ water_level_chart|safe }};
+        Plotly.newPlot('water-level-chart', waterLevelData.data, waterLevelData.layout);
+        {% endif %}
+        
+        {% if flow_rate_chart %}
+        // Flow Rate Chart
+        const flowRateData = {{ flow_rate_chart|safe }};
+        Plotly.newPlot('flow-rate-chart', flowRateData.data, flowRateData.layout);
+        {% endif %}
+        
+        // Apply night mode styling if active
+        applyChartNightMode();
+    });
+    
+    // Function to apply night mode to charts
+    function applyChartNightMode() {
+        if (document.body.classList.contains('night-mode')) {
+            const darkStyle = {
+                'paper_bgcolor': '#1E1E1E',
+                'plot_bgcolor': '#1E1E1E',
+                'font.color': '#E0E0E0',
+                'xaxis.gridcolor': '#444444',
+                'yaxis.gridcolor': '#444444'
+            };
+            
+            {% if water_level_chart %}
+            Plotly.relayout('water-level-chart', darkStyle);
+            {% endif %}
+            
+            {% if flow_rate_chart %}
+            Plotly.relayout('flow-rate-chart', darkStyle);
+            {% endif %}
+        }
+    }
+    
+    // Apply night mode on toggle
+    document.addEventListener('nightModeToggled', applyChartNightMode);
+</script>
+{% endblock %}

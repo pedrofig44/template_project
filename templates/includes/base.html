@@ -60,7 +60,7 @@
                     <a href="{% url 'dashboard:dashboard_home' %}" class="nav-item nav-link {% if request.resolver_match.url_name == 'dashboard_home' or request.resolver_match.url_name == 'main_dashboard' %}active{% endif %}">
                         <i class="fa fa-tachometer-alt me-2"></i>Dashboard
                     </a>
-
+                
                     <!-- Climate Category -->
                     <div class="nav-item dropdown">
                         <a href="" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
@@ -75,33 +75,34 @@
                             <a href="#" class="dropdown-item">Radiation</a>
                         </div>
                     </div>
-
-                    <!-- Extreme Events Category -->
+                
+                    <!-- Wildfires Category -->
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                            <i class="fa fa-exclamation-triangle me-2"></i>Extreme Events
+                            <i class="fa fa-fire me-2"></i>Wildfires
                         </a>
                         <div class="dropdown-menu bg-transparent border-0">
-                            <!-- Wildfires Section -->
                             <a href="{% url 'wildfires:dashboard' %}" class="dropdown-item">Wildfire Dashboard</a>
                             <a href="{% url 'wildfires:risk_map' %}" class="dropdown-item">Wildfire Risk Map</a>
                             <a href="#" class="dropdown-item">Active Wildfires</a>
                             <a href="#" class="dropdown-item">Historical Fires</a>
                             <a href="#" class="dropdown-item">Prevention Plans</a>
-
-                            <!-- Floods Section -->
-                            <a href="#" class="dropdown-item">Flood Forecasts</a>
+                        </div>
+                    </div>
+                
+                    <!-- Floods Category -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fa fa-water me-2"></i>Floods
+                        </a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                            <a href="{% url 'floods:flood_dashboard' %}" class="dropdown-item">Flood Dashboard</a>
                             <a href="#" class="dropdown-item">River Levels</a>
                             <a href="#" class="dropdown-item">Flood Risk Zones</a>
                             <a href="#" class="dropdown-item">Protection Measures</a>
-
-                            <!-- Other Extreme Events -->
-                            <a href="#" class="dropdown-item">Drought Monitor</a>
-                            <a href="#" class="dropdown-item">Heat Waves</a>
-                            <a href="#" class="dropdown-item">Severe Storms</a>
                         </div>
                     </div>
-
+                
                     <!-- Weather Alerts -->
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
@@ -115,7 +116,7 @@
                             <a href="#" class="dropdown-item">Setup Alert Preferences</a>
                         </div>
                     </div>
-
+                
                     <!-- Analysis & Tools Category -->
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
@@ -130,12 +131,12 @@
                             <a href="#" class="dropdown-item">Historic Data</a>
                         </div>
                     </div>
-
+                
                     <!-- Add the About Us button here -->
                     <a href="{% url 'about_us' %}" class="nav-item nav-link">
                         <i class="fa fa-info-circle me-2"></i>About Us
                     </a>
-
+                
                     <!-- Resources -->
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
@@ -148,10 +149,10 @@
                             <a href="#" class="dropdown-item">Community Resources</a>
                         </div>
                     </div>
-
+                
                     <!-- Separator -->
                     <hr class="bg-secondary my-3">
-
+                
                     <!-- Authentication Section - Conditional based on auth status -->
                     {% if user.is_authenticated %}
                         <a href="{% url 'profile' %}" class="nav-item nav-link">

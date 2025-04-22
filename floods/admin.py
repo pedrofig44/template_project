@@ -15,8 +15,8 @@ class WaterBodyAdmin(OSMGeoAdmin):
 
 @admin.register(WaterStation)
 class WaterStationAdmin(OSMGeoAdmin):
-    list_display = ('name', 'station_id', 'measurement_type', 'water_body', 'is_active', 'last_reading_time')
-    list_filter = ('measurement_type', 'water_body', 'is_active')
+    list_display = ('name', 'station_id', 'measurement_type', 'water_body', 'is_active')  # Removed any fields that might require joins
+    list_filter = ('measurement_type', 'water_body', 'is_active')  # Keep only direct fields
     search_fields = ('name', 'station_id')
     fieldsets = (
         (None, {

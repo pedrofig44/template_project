@@ -1,0 +1,364 @@
+{% extends 'includes/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid pt-4 px-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="text-start">
+                {{ water_body.name }}
+                <span class="fs-6 text-muted ms-2">{{ water_body.get_water_body_type_display }}</span>
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'floods:flood_dashboard' %}" class="btn btn-outline-primary">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Water Body Info Card -->
+    <div class="row mb-4">
+        <div class="col-lg-4 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Water Body Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="fw-bold">{{ water_body.name }}</h6>
+                        <p class="mb-0">Type: {{ water_body.get_water_body_type_display }}</p>
+                        <p class="mb-0">Location: {{ water_body.concelho.name }}, {{ water_body.concelho.distrito.name }}</p>
+                    </div>
+                    
+                    {% if water_body.description %}
+                    <div class="mb-3">
+                        <h6 class="fw-bold">Description</h6>
+                        <p class="mb-0">{{ water_body.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <h6 class="fw-bold">Reference Levels</h6>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <span class="d-block small text-muted">Normal</span>
+                                <span>{{ water_body.normal_level|default:"N/A" }} m</span>
+                            </div>
+                            <div>
+                                <span class="d-block small text-muted">Warning</span>
+                                <span>{{ water_body.warning_level|default:"N/A" }} m</span>
+                            </div>
+                            <div>
+                                <span class="d-block small text-muted">Danger</span>
+                                <span>{{ water_body.danger_level|default:"N/A" }} m</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h6 class="fw-bold">Monitoring</h6>
+                        <p class="mb-0">{{ stations.count }} active monitoring stations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Map Card -->
+        <div class="col-lg-8 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Location Map</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Map Legend -->
+                    <div class="mb-3">
+                        <span class="badge bg-success me-2 px-3">Normal</span>
+                        <span class="badge bg-warning text-dark me-2 px-3">Elevated</span>
+                        <span class="badge bg-danger me-2 px-3">Flooding</span>
+                        <span class="badge bg-secondary me-2 px-3">No Data</span>
+                    </div>
+                    
+                    <!-- Map Container -->
+                    <div id="water-body-map" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Warnings Row -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Active Warnings</h5>
+                </div>
+                <div class="card-body">
+                    {% if active_warnings %}
+                        <div class="row">
+                            {% for warning in active_warnings %}
+                            <div class="col-lg-4 col-md-6 mb-3">
+                                <div class="card h-100 {% if warning.warning_level == 'emergency' %}border-danger{% elif warning.warning_level == 'warning' %}border-warning{% else %}border-info{% endif %}">
+                                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">{{ warning.title }}</h6>
+                                        <span class="badge {% if warning.warning_level == 'emergency' %}bg-danger{% elif warning.warning_level == 'warning' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                            {{ warning.get_warning_level_display }}
+                                        </span>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="mb-3 small">{{ warning.description }}</p>
+                                        <div class="small text-muted">
+                                            <div><i class="fa-solid fa-calendar me-1"></i> Start: {{ warning.start_time|date:"M j, H:i" }}</div>
+                                            <div><i class="fa-solid fa-calendar-check me-1"></i> End: {{ warning.end_time|date:"M j, H:i" }}</div>
+                                            {% if warning.station %}
+                                            <div><i class="fa-solid fa-satellite-dish me-1"></i> Station: {{ warning.station.name }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-check-circle fa-4x text-success mb-3"></i>
+                            <p class="mb-0">No active warnings for this water body</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monitoring Stations Row -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Monitoring Stations</h5>
+                </div>
+                <div class="card-body">
+                    {% if stations %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Station Name</th>
+                                        <th>Station ID</th>
+                                        <th>Measurement Type</th>
+                                        <th>Latest Level</th>
+                                        <th>Latest Flow</th>
+                                        <th>Last Update</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for station in stations %}
+                                    <tr>
+                                        <td>{{ station.name }}</td>
+                                        <td><code>{{ station.station_id }}</code></td>
+                                        <td>{{ station.get_measurement_type_display }}</td>
+                                        {% with latest_reading=station.get_latest_reading %}
+                                            <td>
+                                                {% if latest_reading and latest_reading.water_level is not None %}
+                                                    {{ latest_reading.water_level|floatformat:2 }} m
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if latest_reading and latest_reading.flow_rate is not None %}
+                                                    {{ latest_reading.flow_rate|floatformat:1 }} l/s
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if latest_reading %}
+                                                    {{ latest_reading.timestamp|date:"M j, H:i" }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if latest_reading and latest_reading.water_level is not None %}
+                                                    {% if water_body.danger_level and latest_reading.water_level >= water_body.danger_level %}
+                                                        <span class="badge bg-danger">Flooding</span>
+                                                    {% elif water_body.warning_level and latest_reading.water_level >= water_body.warning_level %}
+                                                        <span class="badge bg-warning text-dark">Elevated</span>
+                                                    {% else %}
+                                                        <span class="badge bg-success">Normal</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="badge bg-secondary">No Data</span>
+                                                {% endif %}
+                                            </td>
+                                        {% endwith %}
+                                        <td>
+                                            <a href="{% url 'floods:station_detail' station_id=station.station_id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fa-solid fa-chart-line me-1"></i> Details
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-satellite-dish fa-4x text-muted mb-3"></i>
+                            <p class="text-muted">No monitoring stations for this water body</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize map
+        const map = L.map('water-body-map').setView([37.78, -25.5], 8); // Center on Azores
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Add water body outline if geometry exists (requires GeoJSON)
+        {% if water_body.geometry %}
+            const waterBodyGeoJson = {{ water_body.geometry.geojson|safe }};
+            L.geoJSON(waterBodyGeoJson, {
+                style: {
+                    color: '#0d6efd',
+                    weight: 3,
+                    opacity: 0.7,
+                    fillColor: '#0d6efd',
+                    fillOpacity: 0.2
+                }
+            }).addTo(map);
+        {% endif %}
+        
+        // Add stations to map
+        const bounds = [];
+        
+        {% for station in stations %}
+            {% if station.location %}
+                // Create marker for station
+                const marker = L.marker([{{ station.location.y }}, {{ station.location.x }}], {
+                    title: "{{ station.name }}"
+                }).addTo(map);
+                
+                // Add to bounds
+                bounds.push([{{ station.location.y }}, {{ station.location.x }}]);
+                
+                // Get station status
+                {% with latest_reading=station.get_latest_reading %}
+                    {% if latest_reading and latest_reading.water_level is not None %}
+                        const waterLevel = {{ latest_reading.water_level|floatformat:2 }};
+                        const normalLevel = {{ water_body.normal_level|default:0 }};
+                        const warningLevel = {{ water_body.warning_level|default:0 }};
+                        const dangerLevel = {{ water_body.danger_level|default:0 }};
+                        
+                        let status = "normal";
+                        let statusClass = "bg-success";
+                        
+                        if (dangerLevel > 0 && waterLevel >= dangerLevel) {
+                            status = "flooding";
+                            statusClass = "bg-danger";
+                        } else if (warningLevel > 0 && waterLevel >= warningLevel) {
+                            status = "elevated";
+                            statusClass = "bg-warning text-dark";
+                        }
+                        
+                        // Create popup content
+                        const popupContent = `
+                            <div class="station-popup">
+                                <h6 class="mb-1">{{ station.name }}</h6>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Current Level:</span>
+                                    <span class="badge ${statusClass}">${waterLevel} m</span>
+                                </div>
+                                <div class="text-center mt-2">
+                                    <a href="{% url 'floods:station_detail' station_id=station.station_id %}" class="btn btn-sm btn-primary w-100">Details</a>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Add popup
+                        marker.bindPopup(popupContent);
+                        
+                        // Set marker icon based on status
+                        const markerIcon = L.divIcon({
+                            className: `marker-icon ${statusClass}`,
+                            html: '<i class="fa fa-tint"></i>',
+                            iconSize: [30, 30]
+                        });
+                        marker.setIcon(markerIcon);
+                    {% else %}
+                        // No data available
+                        const popupContent = `
+                            <div class="station-popup">
+                                <h6 class="mb-1">{{ station.name }}</h6>
+                                <div class="text-center mb-2">
+                                    <span class="badge bg-secondary">No Data</span>
+                                </div>
+                                <div class="text-center mt-2">
+                                    <a href="{% url 'floods:station_detail' station_id=station.station_id %}" class="btn btn-sm btn-primary w-100">Details</a>
+                                </div>
+                            </div>
+                        `;
+                        
+                        marker.bindPopup(popupContent);
+                    {% endif %}
+                {% endwith %}
+            {% endif %}
+        {% endfor %}
+        
+        // Fit map to bounds if any stations exist
+        if (bounds.length > 0) {
+            map.fitBounds(bounds);
+        }
+    });
+</script>
+
+<style>
+    /* Custom styles for the map markers */
+    .marker-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        color: white;
+    }
+    
+    .marker-icon.bg-success {
+        background-color: #28a745;
+        border: 2px solid #1e7e34;
+    }
+    
+    .marker-icon.bg-warning {
+        background-color: #ffc107;
+        border: 2px solid #d39e00;
+        color: #212529;
+    }
+    
+    .marker-icon.bg-danger {
+        background-color: #dc3545;
+        border: 2px solid #bd2130;
+    }
+    
+    .marker-icon.bg-secondary {
+        background-color: #6c757d;
+        border: 2px solid #545b62;
+    }
+    
+    /* Popup styles */
+    .station-popup {
+        min-width: 200px;
+    }
+</style>
+{% endblock %}

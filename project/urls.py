@@ -24,4 +24,5 @@ urlpatterns = [
     path('', include('climate.urls', namespace='climate')),
     path('', include('utils.urls', namespace='utils')),
     path('', include('wildfires.urls', namespace='wildfires')),
+    path('', include('floods.urls', namespace='floods')),
 ]

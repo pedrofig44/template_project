@@ -50,7 +50,7 @@ class Distrito(models.Model):
         return f"{self.name} (DICO-{self.district_code})"
 
 class Concelho(models.Model):
-    distrito = models.ForeignKey(Distrito, on_delete=models.CASCADE, related_name='concelhos')
+    distrito = models.ForeignKey(Distrito, to_field='district_code', on_delete=models.CASCADE, related_name='concelhos')
     concelho_code = models.CharField(
         max_length=2,
         validators=[MinLengthValidator(2), MaxLengthValidator(2)],
