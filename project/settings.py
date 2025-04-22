@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     "location",
     "climate",
     "utils",
-    "wildfires"
+    "wildfires",
+    "floods"
 ]
 
 MIDDLEWARE = [
@@ -134,9 +135,12 @@ STATICFILES_DIRS= [
 MEDIA_URL = "media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+os.environ['GDAL_DATA'] = r'C:\OSGeo4W\share\gdal'
+os.environ['PROJ_LIB'] = r'C:\OSGeo4W\share\proj'
 
-GDAL_LIBRARY_PATH = r'C:\OSGeo4W\bin\gdal309.dll'
+GDAL_LIBRARY_PATH = r'C:\OSGeo4W\bin\gdal310.dll'
 GEOS_LIBRARY_PATH = r'C:\OSGeo4W\bin\geos_c.dll'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

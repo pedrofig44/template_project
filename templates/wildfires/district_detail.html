@@ -243,16 +243,18 @@
         </div>
     </div>
 
-    <!-- Municipalities Table -->
+    <!-- Modify the Municipalities Table row to have two columns -->
     <div class="row mb-4">
-        <div class="col-12">
-            <div class="card bg-light border-0 shadow">
+        <!-- Municipalities Table - Changed from col-12 to col-md-6 -->
+        <div class="col-md-6">
+            <div class="card bg-light border-0 shadow h-100">
                 <div class="card-header bg-transparent border-0">
                     <h5 class="mb-0">Municipalities ({{ concelhos.count }})</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover">
+                            <!-- Keep your existing table content here -->
                             <thead>
                                 <tr>
                                     <th>Municipality</th>
@@ -320,6 +322,28 @@
                 </div>
             </div>
         </div>
+
+        <!-- New Map Column -->
+        <div class="col-md-6">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Risk Map for {{ distrito.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Map Legend -->
+                    <div class="mb-3">
+                        <span class="badge bg-success me-1 px-2">Reduced</span>
+                        <span class="badge bg-warning text-dark me-1 px-2">Moderate</span>
+                        <span class="badge me-1 px-2" style="background-color: #fd7e14;">High</span>
+                        <span class="badge bg-danger me-1 px-2">Very High</span>
+                        <span class="badge me-1 px-2" style="background-color: #990000;">Maximum</span>
+                    </div>
+
+                    <!-- Map Container -->
+                    <div id="concelho-risk-map" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Historical Wildfires -->
@@ -362,4 +386,170 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the map
+        const map = L.map('concelho-risk-map').setView([39.5, -8.0], 7);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Get the district code from the page context
+        const distritoCode = "{{ distrito.district_code }}";
+        
+        // Create a dictionary of concelho risks from Django context
+        const concelhoRisks = {
+            {% for dico_code, risk_level in concelho_risks.items %}
+                "{{ dico_code }}": {{ risk_level }},
+            {% endfor %}
+        };
+        
+        // Function to get color based on risk level
+        function getRiskColor(riskLevel) {
+            return riskLevel === 5 ? '#990000' :
+                   riskLevel === 4 ? '#dc3545' :
+                   riskLevel === 3 ? '#fd7e14' :
+                   riskLevel === 2 ? '#ffc107' :
+                              '#28a745';
+        }
+        
+        // Function to get risk level text description
+        function getRiskText(riskLevel) {
+            return riskLevel === 5 ? 'Maximum Risk' :
+                   riskLevel === 4 ? 'Very High Risk' :
+                   riskLevel === 3 ? 'High Risk' :
+                   riskLevel === 2 ? 'Moderate Risk' :
+                              'Reduced Risk';
+        }
+        
+        // Load the GeoJSON file for Portugal concelhos
+        fetch('/static/location/continente_concelhos.json')
+            .then(response => response.json())
+            .then(data => {
+                // Filter concelhos to only show those in the current distrito
+                const filteredGeoJSON = {
+                    type: "FeatureCollection",
+                    features: data.features.filter(feature => {
+                        const dicoCode = feature.properties.DICO;
+                        return dicoCode && dicoCode.substring(0, 2) === distritoCode;
+                    })
+                };
+                
+                // Create GeoJSON layer with custom styling
+                L.geoJSON(filteredGeoJSON, {
+                    style: function(feature) {
+                        // Get the concelho DICO code
+                        const dicoCode = feature.properties.DICO;
+                        
+                        // Get risk level from our risks dictionary
+                        const riskLevel = concelhoRisks[dicoCode] || 1;
+                        
+                        return {
+                            fillColor: getRiskColor(riskLevel),
+                            weight: 2,
+                            opacity: 1,
+                            color: 'white',
+                            dashArray: '3',
+                            fillOpacity: 0.7
+                        };
+                    },
+                    onEachFeature: function(feature, layer) {
+                        // Get the concelho data
+                        const dicoCode = feature.properties.DICO;
+                        const concelhoName = feature.properties.Concelho;
+                        const riskLevel = concelhoRisks[dicoCode] || 1;
+                        const riskText = getRiskText(riskLevel);
+                        
+                        // Create tooltip content for hover
+                        const tooltipContent = `
+                            <div class="font-weight-bold">${concelhoName}</div>
+                            <div>FWI Level: ${riskLevel} (${riskText})</div>
+                        `;
+                        
+                        // Add tooltip that appears on hover
+                        layer.bindTooltip(tooltipContent, {
+                            sticky: true,
+                            opacity: 0.9,
+                            className: 'concelho-tooltip'
+                        });
+                        
+                        // Create popup content for click
+                        let popupContent = `
+                            <strong>${concelhoName}</strong><br>
+                            <strong>DICO Code:</strong> ${dicoCode}<br>
+                            <strong>Risk Level:</strong> ${riskLevel} (${riskText})<br>
+                        `;
+                        
+                        // Add additional info from GeoJSON if available
+                        if (feature.properties.Area_Ha) {
+                            popupContent += `<strong>Area:</strong> ${feature.properties.Area_Ha} ha<br>`;
+                        }
+                        
+                        // Add popup with more detailed concelho information on click
+                        layer.bindPopup(popupContent);
+                        
+                        // Add hover events to highlight the concelho
+                        layer.on({
+                            mouseover: function(e) {
+                                const layer = e.target;
+                                layer.setStyle({
+                                    weight: 3,
+                                    dashArray: '',
+                                    fillOpacity: 0.9
+                                });
+                                layer.bringToFront();
+                            },
+                            mouseout: function(e) {
+                                const layer = e.target;
+                                layer.setStyle({
+                                    weight: 2,
+                                    dashArray: '3',
+                                    fillOpacity: 0.7
+                                });
+                            }
+                        });
+                    }
+                }).addTo(map);
+                
+                // Fit the map to the bounds of the filtered features
+                if (filteredGeoJSON.features.length > 0) {
+                    const bounds = L.geoJSON(filteredGeoJSON).getBounds();
+                    map.fitBounds(bounds);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading GeoJSON:', error);
+                document.getElementById('concelho-risk-map').innerHTML = 
+                    '<div class="alert alert-danger">Failed to load map data. Please try refreshing the page.</div>';
+            });
+    });
+</script>
+
+<!-- Add custom style for tooltip -->
+<style>
+    .concelho-tooltip {
+        font-size: 14px;
+        background-color: rgba(255,255,255,0.9);
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 6px 10px;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+    }
+    
+    .concelho-tooltip .font-weight-bold {
+        font-weight: bold;
+        margin-bottom: 3px;
+    }
+    
+    /* Night mode compatibility */
+    .night-mode .concelho-tooltip {
+        background-color: rgba(30,30,30,0.9);
+        color: #E0E0E0;
+        border-color: #444;
+    }
+</style>
+
 {% endblock %}

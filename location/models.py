@@ -148,7 +148,7 @@ class Address(models.Model):
         return f"{self.street}, {self.number}, {self.concelho.name}, {self.postal_code}"
 
 
-    # SensorInfo Model
+# SensorInfo Model
 class SensorInfo(models.Model):
     sensor_id = models.CharField(
         max_length=8,
