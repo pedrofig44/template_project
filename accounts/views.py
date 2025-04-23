@@ -140,10 +140,3 @@ def reset_password_validate_view(request, uidb64, token):
         messages.error(request, 'This link has expired!')
         return redirect('forgot_password')  # Redirect to the forgot password page
 
-
-
-def about_us(request):
-    """
-    View to render the About Us page
-    """
-    return render(request, 'accounts/about_us.html')
