@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-23 15:39+0100\n"
+"POT-Creation-Date: 2025-04-24 10:50+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,260 +17,332 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-#: settings.py:125
+
+#: .\project\settings.py:120
 msgid "English"
 msgstr "Inglês"
 
-#: settings.py:126
+#: .\project\settings.py:121
 msgid "Portuguese"
 msgstr "Português"
 
-#: settings.py:127
+#: .\project\settings.py:122
 msgid "Spanish"
 msgstr "Espanhol"
 
-#: templates/home/index.html:5
+#: .\templates\home\index.html:5
 msgid "EcoSentinel - Climate Monitoring System"
 msgstr "EcoSentinel - Sistema de Monitoramento Climático"
 
-#: templates/home/index.html:12
+#: .\templates\home\index.html:13
 msgid "EcoSentinel - Intelligent Climate Monitoring System"
-msgstr "EcoSentinel - Sistema Inteligente de Monitorização de Fenómenos Climáticos"
+msgstr ""
+"EcoSentinel - Sistema Inteligente de Monitorização de Fenómenos Climáticos"
 
-#: templates/home/index.html:13
-msgid "Advanced AI-powered platform for predicting and monitoring environmental events"
-msgstr "Plataforma avançada com IA para prever e monitorizar eventos ambientais"
+#: .\templates\home\index.html:14
+msgid ""
+"Advanced AI-powered platform for predicting and monitoring environmental "
+"events"
+msgstr ""
+"Plataforma avançada com IA para prever e monitorizar eventos ambientais"
 
-#: templates/home/index.html:16
-#: templates/includes/base_intro.html:57
+#: .\templates\home\index.html:17
 msgid "Dashboard"
 msgstr "Painel de Controle"
 
-#: templates/home/index.html:19
-#: templates/home/index.html:147
+#: .\templates\home\index.html:20 .\templates\home\index.html:192
 msgid "Learn More"
 msgstr "Saiba Mais"
 
-#: templates/home/index.html:40
+#: .\templates\home\index.html:33
 msgid "Key Features"
 msgstr "Funcionalidades Principais"
 
-#: templates/home/index.html:41
-msgid "EcoSentinel brings essential features for environmental safety and monitoring"
-msgstr "O EcoSentinel traz funcionalidades essenciais para a segurança e monitorização ambiental"
+#: .\templates\home\index.html:34
+msgid ""
+"EcoSentinel brings essential features for environmental safety and monitoring"
+msgstr ""
+"O EcoSentinel traz funcionalidades essenciais para a segurança e "
+"monitorização ambiental"
 
-#: templates/home/index.html:50
+#: .\templates\home\index.html:44
 msgid "Wildfire Prediction"
 msgstr "Previsão de Incêndios"
 
-#: templates/home/index.html:51
-msgid "Advanced algorithms to identify potential wildfire locations before they occur."
-msgstr "Algoritmos avançados para identificar possíveis localizações de incêndios antes de ocorrerem."
+#: .\templates\home\index.html:45
+msgid ""
+"Advanced algorithms to identify potential wildfire locations before they "
+"occur."
+msgstr ""
+"Algoritmos avançados para identificar possíveis localizações de incêndios "
+"antes de ocorrerem."
 
-#: templates/home/index.html:60
+#: .\templates\home\index.html:55
 msgid "Fire Risk Alerts"
 msgstr "Alertas de Risco de Incêndio"
 
-#: templates/home/index.html:61
-msgid "Generates alerts based on real-time weather conditions and historical data patterns."
-msgstr "Gera alertas baseados nas condições meteorológicas em tempo real e padrões históricos de dados."
+#: .\templates\home\index.html:56
+msgid ""
+"Generates alerts based on real-time weather conditions and historical data "
+"patterns."
+msgstr ""
+"Gera alertas baseados nas condições meteorológicas em tempo real e padrões "
+"históricos de dados."
 
-#: templates/home/index.html:70
+#: .\templates\home\index.html:66
 msgid "Risk Area Mapping"
 msgstr "Mapeamento de Áreas de Risco"
 
-#: templates/home/index.html:71
-msgid "Identifies and maps regions with high susceptibility to wildfires and other climate events."
-msgstr "Identifica e mapeia regiões com alta suscetibilidade a incêndios florestais e outros eventos climáticos."
+#: .\templates\home\index.html:67
+msgid ""
+"Identifies and maps regions with high susceptibility to wildfires and other "
+"climate events."
+msgstr ""
+"Identifica e mapeia regiões com alta suscetibilidade a incêndios florestais "
+"e outros eventos climáticos."
 
-#: templates/home/index.html:91
+#: .\templates\home\index.html:77
+#, fuzzy
+#| msgid "13 - Climate Action"
+msgid "Climate Forecasting"
+msgstr "13 - Ação Climática"
+
+#: .\templates\home\index.html:78
+msgid ""
+"Short and long-term climate predictions to assist in prevention planning."
+msgstr ""
+
+#: .\templates\home\index.html:88
+msgid "Continuous AI Learning"
+msgstr ""
+
+#: .\templates\home\index.html:89
+msgid ""
+"Models that improve accuracy with every new incident recorded in the system."
+msgstr ""
+
+#: .\templates\home\index.html:99
+msgid "Real-Time Data"
+msgstr ""
+
+#: .\templates\home\index.html:100
+msgid "Live data visualization from sensors deployed across various locations."
+msgstr ""
+
+#: .\templates\home\index.html:110
+msgid "Open Data Sharing"
+msgstr ""
+
+#: .\templates\home\index.html:111
+msgid ""
+"Public access to data for research institutions and the scientific community."
+msgstr ""
+
+#: .\templates\home\index.html:121
+msgid "API Access"
+msgstr ""
+
+#: .\templates\home\index.html:122
+msgid "Prediction models available via API for integration with other systems."
+msgstr ""
+
+#: .\templates\home\index.html:132
+msgid "AI Algorithms"
+msgstr ""
+
+#: .\templates\home\index.html:133
+msgid ""
+"State-of-the-art artificial intelligence to identify patterns and make "
+"predictions."
+msgstr ""
+
+#: .\templates\home\index.html:144
 msgid "In Line with SDG Goals"
 msgstr "Em Sintonia com os ODS"
 
-#: templates/home/index.html:92
-msgid "EcoSentinel supports Portugal's efforts to achieve Sustainable Development Goals"
-msgstr "O EcoSentinel apoia os esforços de Portugal para atingir os Objetivos de Desenvolvimento Sustentável"
+#: .\templates\home\index.html:145
+msgid ""
+"EcoSentinel supports Portugal's efforts to achieve Sustainable Development "
+"Goals"
+msgstr ""
+"O EcoSentinel apoia os esforços de Portugal para atingir os Objetivos de "
+"Desenvolvimento Sustentável"
 
-#: templates/home/index.html:98
+#: .\templates\home\index.html:152
 msgid "9 - Industry, Innovation and Infrastructure"
 msgstr "9 - Indústria, Inovação e Infraestruturas"
 
-#: templates/home/index.html:105
+#: .\templates\home\index.html:159
 msgid "11 - Sustainable Cities and Communities"
 msgstr "11 - Cidades e Comunidades Sustentáveis"
 
-#: templates/home/index.html:112
+#: .\templates\home\index.html:166
 msgid "13 - Climate Action"
 msgstr "13 - Ação Climática"
 
-#: templates/home/index.html:119
+#: .\templates\home\index.html:173
 msgid "15 - Life on Land"
 msgstr "15 - Proteger a Vida Terrestre"
 
-#: templates/home/index.html:133
+#: .\templates\home\index.html:186 .\templates\home\index.html:190
 msgid "Sensor Integration"
 msgstr "Integração com Sensores"
 
-#: templates/home/index.html:134
-msgid "Real-time data from various sensors helps make predictions as accurate as possible and allows visualization of the most recent environmental conditions."
-msgstr "Dados em tempo real de vários sensores ajudam a fazer previsões o mais precisas possível e permitem a visualização das condições ambientais mais recentes."
+#: .\templates\home\index.html:191
+msgid ""
+"Real-time data from various sensors helps make predictions as accurate as "
+"possible and allows visualization of the most recent environmental "
+"conditions."
+msgstr ""
+"Dados em tempo real de vários sensores ajudam a fazer previsões o mais "
+"precisas possível e permitem a visualização das condições ambientais mais "
+"recentes."
 
-#: templates/home/index.html:146
+#: .\templates\home\index.html:200
 msgid "Wildfire Monitoring"
 msgstr "Monitorização de Incêndios"
 
-#: templates/home/index.html:153
+#: .\templates\home\index.html:204
 msgid "Wildfire Alerts & Monitoring"
 msgstr "Alertas e Monitorização de Incêndios"
 
-#: templates/home/index.html:154
-msgid "The EcoSentinel system is capable of alerting users to potential wildfires and monitoring active ones in real-time."
-msgstr "O sistema EcoSentinel é capaz de alertar os utilizadores para potenciais incêndios e monitorizar os ativos em tempo real."
+#: .\templates\home\index.html:205
+msgid ""
+"The EcoSentinel system is capable of alerting users to potential wildfires "
+"and monitoring active ones in real-time."
+msgstr ""
+"O sistema EcoSentinel é capaz de alertar os utilizadores para potenciais "
+"incêndios e monitorizar os ativos em tempo real."
 
-#: templates/home/index.html:155
+#: .\templates\home\index.html:206
 msgid "View Dashboard"
 msgstr "Ver Painel"
 
-#: templates/home/index.html:164
+#: .\templates\home\index.html:214
 msgid "AI Predictions"
 msgstr "Previsões com IA"
 
-#: templates/home/index.html:171
+#: .\templates\home\index.html:218
 msgid "AI-Powered Predictions"
 msgstr "Previsões com Inteligência Artificial"
 
-#: templates/home/index.html:172
-msgid "View predictions on interactive maps to anticipate events and plan surveillance strategies or preventive measures."
-msgstr "Visualize previsões em mapas interativos para antecipar eventos e planear estratégias de vigilância ou medidas preventivas."
+#: .\templates\home\index.html:219
+msgid ""
+"View predictions on interactive maps to anticipate events and plan "
+"surveillance strategies or preventive measures."
+msgstr ""
+"Visualize previsões em mapas interativos para antecipar eventos e planear "
+"estratégias de vigilância ou medidas preventivas."
 
-#: templates/home/index.html:173
+#: .\templates\home\index.html:220
 msgid "Explore AI Technology"
 msgstr "Explorar Tecnologia de IA"
 
-#: templates/home/index.html:182
+#: .\templates\home\index.html:230
 msgid "Ready to get started with EcoSentinel?"
 msgstr "Pronto para começar com o EcoSentinel?"
 
-#: templates/home/index.html:184
+#: .\templates\home\index.html:232
 msgid "Create Account"
 msgstr "Criar Conta"
 
-#: templates/home/index.html:185
+#: .\templates\home\index.html:233
 msgid "Contact Us"
 msgstr "Contacte-nos"
 
-#: templates/includes/base_intro.html:51
-msgid "Features"
-msgstr "Funcionalidades"
+#~ msgid "Features"
+#~ msgstr "Funcionalidades"
 
-#: templates/includes/base_intro.html:54
-msgid "SDG Goals"
-msgstr "Objetivos ODS"
+#~ msgid "SDG Goals"
+#~ msgstr "Objetivos ODS"
 
-#: templates/includes/base_intro.html:57
-msgid "Integration"
-msgstr "Integração"
+#~ msgid "Integration"
+#~ msgstr "Integração"
 
-#: templates/includes/base_intro.html:60
-msgid "Language"
-msgstr "Idioma"
+#~ msgid "Language"
+#~ msgstr "Idioma"
 
-#: templates/includes/base_intro.html:73
-msgid "Logout"
-msgstr "Sair"
+#~ msgid "Logout"
+#~ msgstr "Sair"
 
-#: templates/includes/base_intro.html:75
-msgid "Register"
-msgstr "Registar"
+#~ msgid "Register"
+#~ msgstr "Registar"
 
-#: templates/includes/base_intro.html:76
-msgid "Login"
-msgstr "Entrar"
+#~ msgid "Login"
+#~ msgstr "Entrar"
 
-#: templates/includes/base_intro.html:89
-msgid "About EcoSentinel"
-msgstr "Sobre o EcoSentinel"
+#~ msgid "About EcoSentinel"
+#~ msgstr "Sobre o EcoSentinel"
 
-#: templates/includes/base_intro.html:90
-msgid "EcoSentinel is a climate monitoring system that provides decision support for response agencies and helps protect the environment from extreme weather events."
-msgstr "O EcoSentinel é um sistema de monitorização climática que fornece suporte à decisão para agências de resposta e ajuda a proteger o ambiente de eventos climáticos extremos."
+#~ msgid ""
+#~ "EcoSentinel is a climate monitoring system that provides decision support "
+#~ "for response agencies and helps protect the environment from extreme "
+#~ "weather events."
+#~ msgstr ""
+#~ "O EcoSentinel é um sistema de monitorização climática que fornece suporte "
+#~ "à decisão para agências de resposta e ajuda a proteger o ambiente de "
+#~ "eventos climáticos extremos."
 
-#: templates/includes/base_intro.html:115
-msgid "Company"
-msgstr "Empresa"
+#~ msgid "Company"
+#~ msgstr "Empresa"
 
-#: templates/includes/base_intro.html:117
-msgid "About Us"
-msgstr "Sobre Nós"
+#~ msgid "About Us"
+#~ msgstr "Sobre Nós"
 
-#: templates/includes/base_intro.html:118
-msgid "Partners"
-msgstr "Parceiros"
+#~ msgid "Partners"
+#~ msgstr "Parceiros"
 
-#: templates/includes/base_intro.html:119
-msgid "Careers"
-msgstr "Carreiras"
+#~ msgid "Careers"
+#~ msgstr "Carreiras"
 
-#: templates/includes/base_intro.html:120
-msgid "News"
-msgstr "Notícias"
+#~ msgid "News"
+#~ msgstr "Notícias"
 
-#: templates/includes/base_intro.html:126
-msgid "Resources"
-msgstr "Recursos"
+#~ msgid "Resources"
+#~ msgstr "Recursos"
 
-#: templates/includes/base_intro.html:128
-msgid "Documentation"
-msgstr "Documentação"
+#~ msgid "Documentation"
+#~ msgstr "Documentação"
 
-#: templates/includes/base_intro.html:129
-msgid "API Reference"
-msgstr "Referência da API"
+#~ msgid "API Reference"
+#~ msgstr "Referência da API"
 
-#: templates/includes/base_intro.html:130
-msgid "Tutorials"
-msgstr "Tutoriais"
+#~ msgid "Tutorials"
+#~ msgstr "Tutoriais"
 
-#: templates/includes/base_intro.html:131
-msgid "Blog"
-msgstr "Blog"
+#~ msgid "Blog"
+#~ msgstr "Blog"
 
-#: templates/includes/base_intro.html:137
-msgid "Legal"
-msgstr "Legal"
+#~ msgid "Legal"
+#~ msgstr "Legal"
 
-#: templates/includes/base_intro.html:139
-msgid "Privacy Policy"
-msgstr "Política de Privacidade"
+#~ msgid "Privacy Policy"
+#~ msgstr "Política de Privacidade"
 
-#: templates/includes/base_intro.html:140
-msgid "Terms of Service"
-msgstr "Termos de Serviço"
+#~ msgid "Terms of Service"
+#~ msgstr "Termos de Serviço"
 
-#: templates/includes/base_intro.html:141
-msgid "Cookie Policy"
-msgstr "Política de Cookies"
+#~ msgid "Cookie Policy"
+#~ msgstr "Política de Cookies"
 
-#: templates/includes/base_intro.html:142
-msgid "GDPR"
-msgstr "RGPD"
+#~ msgid "GDPR"
+#~ msgstr "RGPD"
 
-#: templates/includes/base_intro.html:148
-msgid "Newsletter"
-msgstr "Newsletter"
+#~ msgid "Newsletter"
+#~ msgstr "Newsletter"
 
-#: templates/includes/base_intro.html:149
-msgid "Subscribe to our newsletter for updates on new features and environmental news."
-msgstr "Subscreva a nossa newsletter para atualizações sobre novas funcionalidades e notícias ambientais."
+#~ msgid ""
+#~ "Subscribe to our newsletter for updates on new features and environmental "
+#~ "news."
+#~ msgstr ""
+#~ "Subscreva a nossa newsletter para atualizações sobre novas "
+#~ "funcionalidades e notícias ambientais."
 
-#: templates/includes/base_intro.html:152
-msgid "Your email"
-msgstr "O seu email"
+#~ msgid "Your email"
+#~ msgstr "O seu email"
 
-#: templates/includes/base_intro.html:152
-msgid "Email address"
-msgstr "Endereço de email"
+#~ msgid "Email address"
+#~ msgstr "Endereço de email"
 
-#: templates/includes/base_intro.html:166
-msgid "© 2025 EcoSentinel. All rights reserved."
-msgstr "© 2025 EcoSentinel. Todos os direitos reservados."
+#~ msgid "© 2025 EcoSentinel. All rights reserved."
+#~ msgstr "© 2025 EcoSentinel. Todos os direitos reservados."

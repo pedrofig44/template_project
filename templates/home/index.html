@@ -1,7 +1,8 @@
 {% extends 'includes/base_intro.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}EcoSentinel - Climate Monitoring System{% endblock %}
+{% block title %}{% trans "EcoSentinel - Climate Monitoring System" %}{% endblock %}
 
 {% block content %}
     <!-- Hero Section -->
@@ -9,14 +10,14 @@
         <div class="container text-center">
             <div class="row justify-content-center">
                 <div class="col-md-10 col-lg-8">
-                    <h1>EcoSentinel - Intelligent Climate Monitoring System</h1>
-                    <h2 class="lead">Advanced AI-powered platform for predicting and monitoring environmental events</h2>
+                    <h1>{% trans "EcoSentinel - Intelligent Climate Monitoring System" %}</h1>
+                    <h2 class="lead">{% trans "Advanced AI-powered platform for predicting and monitoring environmental events" %}</h2>
                     <div class="d-flex justify-content-center">
                         <a href="{% url 'dashboard:main_dashboard' %}" class="btn btn-light btn-lg me-3">
-                            <i class="fas fa-chart-line me-2"></i>Dashboard
+                            <i class="fas fa-chart-line me-2"></i>{% trans "Dashboard" %}
                         </a>
                         <a href="#features" class="btn btn-outline-light btn-lg">
-                            <i class="fas fa-info-circle me-2"></i>Learn More
+                            <i class="fas fa-info-circle me-2"></i>{% trans "Learn More" %}
                         </a>
                     </div>
                 </div>
@@ -29,8 +30,8 @@
     <section class="features-section" id="features">
         <div class="container">
             <div class="text-center mb-5">
-                <h2 class="display-4">Key Features</h2>
-                <p class="lead">EcoSentinel brings essential features for environmental safety and monitoring</p>
+                <h2 class="display-4">{% trans "Key Features" %}</h2>
+                <p class="lead">{% trans "EcoSentinel brings essential features for environmental safety and monitoring" %}</p>
             </div>
             
             <div class="row g-4 equal-height-row">
@@ -40,8 +41,8 @@
                         <div class="feature-icon">
                             <i class="fas fa-magnifying-glass-chart"></i>
                         </div>
-                        <h4>Wildfire Prediction</h4>
-                        <p class="text-muted">Advanced algorithms to identify potential wildfire locations before they occur.</p>
+                        <h4>{% trans "Wildfire Prediction" %}</h4>
+                        <p class="text-muted">{% trans "Advanced algorithms to identify potential wildfire locations before they occur." %}</p>
                     </div>
                 </div>
                 
@@ -51,8 +52,8 @@
                         <div class="feature-icon">
                             <i class="fas fa-triangle-exclamation"></i>
                         </div>
-                        <h4>Fire Risk Alerts</h4>
-                        <p class="text-muted">Generates alerts based on real-time weather conditions and historical data patterns.</p>
+                        <h4>{% trans "Fire Risk Alerts" %}</h4>
+                        <p class="text-muted">{% trans "Generates alerts based on real-time weather conditions and historical data patterns." %}</p>
                     </div>
                 </div>
                 
@@ -62,8 +63,8 @@
                         <div class="feature-icon">
                             <i class="fas fa-map-location-dot"></i>
                         </div>
-                        <h4>Risk Area Mapping</h4>
-                        <p class="text-muted">Identifies and maps regions with high susceptibility to wildfires and other climate events.</p>
+                        <h4>{% trans "Risk Area Mapping" %}</h4>
+                        <p class="text-muted">{% trans "Identifies and maps regions with high susceptibility to wildfires and other climate events." %}</p>
                     </div>
                 </div>
                 
@@ -73,8 +74,8 @@
                         <div class="feature-icon">
                             <i class="fas fa-chart-line"></i>
                         </div>
-                        <h4>Climate Forecasting</h4>
-                        <p class="text-muted">Short and long-term climate predictions to assist in prevention planning.</p>
+                        <h4>{% trans "Climate Forecasting" %}</h4>
+                        <p class="text-muted">{% trans "Short and long-term climate predictions to assist in prevention planning." %}</p>
                     </div>
                 </div>
                 
@@ -84,8 +85,8 @@
                         <div class="feature-icon">
                             <i class="fas fa-arrows-spin"></i>
                         </div>
-                        <h4>Continuous AI Learning</h4>
-                        <p class="text-muted">Models that improve accuracy with every new incident recorded in the system.</p>
+                        <h4>{% trans "Continuous AI Learning" %}</h4>
+                        <p class="text-muted">{% trans "Models that improve accuracy with every new incident recorded in the system." %}</p>
                     </div>
                 </div>
                 
@@ -95,8 +96,8 @@
                         <div class="feature-icon">
                             <i class="fas fa-chart-area"></i>
                         </div>
-                        <h4>Real-Time Data</h4>
-                        <p class="text-muted">Live data visualization from sensors deployed across various locations.</p>
+                        <h4>{% trans "Real-Time Data" %}</h4>
+                        <p class="text-muted">{% trans "Live data visualization from sensors deployed across various locations." %}</p>
                     </div>
                 </div>
                 
@@ -106,8 +107,8 @@
                         <div class="feature-icon">
                             <i class="fas fa-retweet"></i>
                         </div>
-                        <h4>Open Data Sharing</h4>
-                        <p class="text-muted">Public access to data for research institutions and the scientific community.</p>
+                        <h4>{% trans "Open Data Sharing" %}</h4>
+                        <p class="text-muted">{% trans "Public access to data for research institutions and the scientific community." %}</p>
                     </div>
                 </div>
                 
@@ -117,8 +118,8 @@
                         <div class="feature-icon">
                             <i class="fas fa-circle-nodes"></i>
                         </div>
-                        <h4>API Access</h4>
-                        <p class="text-muted">Prediction models available via API for integration with other systems.</p>
+                        <h4>{% trans "API Access" %}</h4>
+                        <p class="text-muted">{% trans "Prediction models available via API for integration with other systems." %}</p>
                     </div>
                 </div>
                 
@@ -128,8 +129,8 @@
                         <div class="feature-icon">
                             <i class="fab fa-connectdevelop"></i>
                         </div>
-                        <h4>AI Algorithms</h4>
-                        <p class="text-muted">State-of-the-art artificial intelligence to identify patterns and make predictions.</p>
+                        <h4>{% trans "AI Algorithms" %}</h4>
+                        <p class="text-muted">{% trans "State-of-the-art artificial intelligence to identify patterns and make predictions." %}</p>
                     </div>
                 </div>
             </div>
@@ -140,36 +141,36 @@
     <section class="sdg-section" id="sdg">
         <div class="container">
             <div class="text-center mb-5">
-                <h2 class="display-4">In Line with SDG Goals</h2>
-                <p class="lead">EcoSentinel supports Portugal's efforts to achieve Sustainable Development Goals</p>
+                <h2 class="display-4">{% trans "In Line with SDG Goals" %}</h2>
+                <p class="lead">{% trans "EcoSentinel supports Portugal's efforts to achieve Sustainable Development Goals" %}</p>
             </div>
             
             <div class="row g-4">
                 <div class="col-md-6 col-lg-3">
                     <div class="sdg-card bg-orange">
                         <i class="fas fa-industry fa-3x mb-3"></i>
-                        <h4>9 - Industry, Innovation and Infrastructure</h4>
+                        <h4>{% trans "9 - Industry, Innovation and Infrastructure" %}</h4>
                     </div>
                 </div>
                 
                 <div class="col-md-6 col-lg-3">
                     <div class="sdg-card bg-yellow">
                         <i class="fas fa-tree-city fa-3x mb-3"></i>
-                        <h4>11 - Sustainable Cities and Communities</h4>
+                        <h4>{% trans "11 - Sustainable Cities and Communities" %}</h4>
                     </div>
                 </div>
                 
                 <div class="col-md-6 col-lg-3">
                     <div class="sdg-card bg-blue">
                         <i class="fas fa-earth-europe fa-3x mb-3"></i>
-                        <h4>13 - Climate Action</h4>
+                        <h4>{% trans "13 - Climate Action" %}</h4>
                     </div>
                 </div>
                 
                 <div class="col-md-6 col-lg-3">
                     <div class="sdg-card bg-green">
                         <i class="fas fa-tree fa-3x mb-3"></i>
-                        <h4>15 - Life on Land</h4>
+                        <h4>{% trans "15 - Life on Land" %}</h4>
                     </div>
                 </div>
             </div>
@@ -182,13 +183,13 @@
             <!-- Sensor Integration -->
             <div class="row align-items-center mb-5">
                 <div class="col-lg-6 mb-4 mb-lg-0">
-                    <img src="{% static 'img/iot-in-agriculture.jpg' %}" alt="Sensor Integration" class="img-fluid">
+                    <img src="{% static 'img/iot-in-agriculture.jpg' %}" alt="{% trans 'Sensor Integration' %}" class="img-fluid">
                 </div>
                 <div class="col-lg-6">
                     <div class="ps-lg-4">
-                        <h2 class="display-5 mb-3">Sensor Integration</h2>
-                        <p class="lead">Real-time data from various sensors helps make predictions as accurate as possible and allows visualization of the most recent environmental conditions.</p>
-                        <a href="#" class="btn btn-primary mt-3">Learn More</a>
+                        <h2 class="display-5 mb-3">{% trans "Sensor Integration" %}</h2>
+                        <p class="lead">{% trans "Real-time data from various sensors helps make predictions as accurate as possible and allows visualization of the most recent environmental conditions." %}</p>
+                        <a href="#" class="btn btn-primary mt-3">{% trans "Learn More" %}</a>
                     </div>
                 </div>
             </div>
@@ -196,13 +197,13 @@
             <!-- Wildfire Monitoring -->
             <div class="row align-items-center mb-5 flex-lg-row-reverse">
                 <div class="col-lg-6 mb-4 mb-lg-0">
-                    <img src="{% static 'img/agricity_map.png' %}" alt="Wildfire Monitoring" class="img-fluid">
+                    <img src="{% static 'img/agricity_map.png' %}" alt="{% trans 'Wildfire Monitoring' %}" class="img-fluid">
                 </div>
                 <div class="col-lg-6">
                     <div class="pe-lg-4">
-                        <h2 class="display-5 mb-3">Wildfire Alerts & Monitoring</h2>
-                        <p class="lead">The EcoSentinel system is capable of alerting users to potential wildfires and monitoring active ones in real-time.</p>
-                        <a href="{% url 'dashboard:main_dashboard' %}" class="btn btn-primary mt-3">View Dashboard</a>
+                        <h2 class="display-5 mb-3">{% trans "Wildfire Alerts & Monitoring" %}</h2>
+                        <p class="lead">{% trans "The EcoSentinel system is capable of alerting users to potential wildfires and monitoring active ones in real-time." %}</p>
+                        <a href="{% url 'dashboard:main_dashboard' %}" class="btn btn-primary mt-3">{% trans "View Dashboard" %}</a>
                     </div>
                 </div>
             </div>
@@ -210,13 +211,13 @@
             <!-- AI Predictions -->
             <div class="row align-items-center">
                 <div class="col-lg-6 mb-4 mb-lg-0">
-                    <img src="{% static 'img/ai_wildfires.png' %}" alt="AI Predictions" class="img-fluid">
+                    <img src="{% static 'img/ai_wildfires.png' %}" alt="{% trans 'AI Predictions' %}" class="img-fluid">
                 </div>
                 <div class="col-lg-6">
                     <div class="ps-lg-4">
-                        <h2 class="display-5 mb-3">AI-Powered Predictions</h2>
-                        <p class="lead">View predictions on interactive maps to anticipate events and plan surveillance strategies or preventive measures.</p>
-                        <a href="#" class="btn btn-primary mt-3">Explore AI Technology</a>
+                        <h2 class="display-5 mb-3">{% trans "AI-Powered Predictions" %}</h2>
+                        <p class="lead">{% trans "View predictions on interactive maps to anticipate events and plan surveillance strategies or preventive measures." %}</p>
+                        <a href="#" class="btn btn-primary mt-3">{% trans "Explore AI Technology" %}</a>
                     </div>
                 </div>
             </div>
@@ -226,10 +227,10 @@
     <!-- Call to Action -->
     <section class="py-5 bg-primary text-white">
         <div class="container text-center">
-            <h2 class="mb-4">Ready to get started with EcoSentinel?</h2>
+            <h2 class="mb-4">{% trans "Ready to get started with EcoSentinel?" %}</h2>
             <div class="d-flex justify-content-center">
-                <a href="{% url 'register' %}" class="btn btn-light btn-lg me-3">Create Account</a>
-                <a href="#" class="btn btn-outline-light btn-lg">Contact Us</a>
+                <a href="{% url 'register' %}" class="btn btn-light btn-lg me-3">{% trans "Create Account" %}</a>
+                <a href="#" class="btn btn-outline-light btn-lg">{% trans "Contact Us" %}</a>
             </div>
         </div>
     </section>

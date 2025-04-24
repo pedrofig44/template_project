@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -50,11 +51,39 @@
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-globe me-1"></i>Language
+                            <i class="fas fa-globe me-1"></i>{% trans "Language" %}
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="languageDropdown">
-                            <li><a class="dropdown-item" href="#">English ✓</a></li>
-                            <li><a class="dropdown-item" href="#">Portuguese</a></li>
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post" style="margin: 0; padding: 0;">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ request.path }}">
+                                    <input name="language" type="hidden" value="en">
+                                    <button type="submit" class="dropdown-item" style="width: 100%; text-align: left;">
+                                        English {% if LANGUAGE_CODE == 'en' %}✓{% endif %}
+                                    </button>
+                                </form>
+                            </li>
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post" style="margin: 0; padding: 0;">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ request.path }}">
+                                    <input name="language" type="hidden" value="pt">
+                                    <button type="submit" class="dropdown-item" style="width: 100%; text-align: left;">
+                                        Portuguese {% if LANGUAGE_CODE == 'pt' %}✓{% endif %}
+                                    </button>
+                                </form>
+                            </li>
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post" style="margin: 0; padding: 0;">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ request.path }}">
+                                    <input name="language" type="hidden" value="es">
+                                    <button type="submit" class="dropdown-item" style="width: 100%; text-align: left;">
+                                        Spanish {% if LANGUAGE_CODE == 'es' %}✓{% endif %}
+                                    </button>
+                                </form>
+                            </li>
                         </ul>
                     </li>
                 </ul>
