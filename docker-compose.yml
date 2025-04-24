@@ -1,27 +1,40 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgis/postgis:13-3.1
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ecosentinel
+    ports:
+      - "5432:5432"
+
   web:
     build: .
-    command: python manage.py runserver 0.0.0.0:8100
     volumes:
       - .:/app
-    ports:
-      - "8100:8100"
+      - static_volume:/app/static
+      - media_volume:/app/media
     depends_on:
       - db
     environment:
-      - DEBUG=1
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
-  
-  db:
-    image: postgres:13
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - DEBUG=True
+      - DB_NAME=ecosentinel
+      - DB_USER=postgres
+      - DB_PASSWORD=admin
+      - DB_HOST=db
+      - DB_PORT=5432
+    ports:
+      - "8000:8000"
+    command: >
+      bash -c "python manage.py migrate &&
+               python manage.py collectstatic --no-input &&
+               python manage.py runserver 0.0.0.0:8000"
 
 volumes:
   postgres_data:
+  static_volume:
+  media_volume:

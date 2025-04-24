@@ -1,41 +1,27 @@
-# Use Python 3.11 as the base image
-FROM python:3.11-slim
+FROM python:3.9-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
+
+# Install system dependencies (GDAL for GeoDjango)
+RUN apt-get update && apt-get install -y \
+    gdal-bin \
+    libgdal-dev \
+    postgresql-client \
+    python3-dev \
+    libpq-dev \
+    gcc \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apk update && \
-    apk add --no-cache \
-    postgresql-dev \
-    gcc \
-    g++ \
-    cmake \
-    make \
-    python3-dev \
-    musl-dev \
-    geos \
-    gdal-dev \
-    rust \
-    cargo \
-    && rm -rf /var/cache/apk/*
-
-
-# Set GDAL environment variables
-ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
-ENV C_INCLUDE_PATH=/usr/include/gdal
-
-# Install Python dependencies
-COPY requirements.txt /app/
+# Install dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
-COPY . /app/
+# Copy project
+COPY . .
 
-# Run as non-root user
-RUN useradd -m myuser
-USER myuser
+# Run the Django development server
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
