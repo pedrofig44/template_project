@@ -11,7 +11,9 @@ from climate.models import StationObservation, DailyForecast
 from dashboard.utils import generate_line_chart, generate_bar_chart, generate_combined_chart
 
 from django.core.serializers import serialize
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def temperature_dashboard(request):
     """
     Main temperature dashboard view showing temperature data across all stations
@@ -154,6 +156,7 @@ def temperature_dashboard(request):
     
     return render(request, 'climate/temperature_dashboard.html', context)
 
+@login_required
 def station_temperature_detail(request, station_id):
     """
     Detailed view for a specific weather station's temperature data
@@ -250,6 +253,7 @@ def station_temperature_detail(request, station_id):
     
     return render(request, 'climate/station_temperature_detail.html', context)
 
+@login_required
 def temperature_chart_data(request):
     """
     API endpoint to get temperature chart data for AJAX requests
@@ -299,7 +303,7 @@ def temperature_chart_data(request):
     
     return JsonResponse(chart_data)
 
-
+@login_required
 def station_location_data(request, station_id):
     """Return GeoJSON for a specific weather station"""
     try:
@@ -361,8 +365,8 @@ def station_location_data(request, station_id):
             "type": "FeatureCollection",
             "features": []
         })
-        
-        
+
+@login_required
 def wind_dashboard(request):
     """
     Main wind dashboard view showing wind data across all stations
@@ -545,6 +549,7 @@ def wind_dashboard(request):
     
     return render(request, 'climate/wind_dashboard.html', context)
 
+@login_required
 def station_wind_detail(request, station_id):
     """
     Detailed view for a specific weather station's wind data
@@ -704,6 +709,7 @@ def station_wind_detail(request, station_id):
     
     return render(request, 'climate/station_wind_detail.html', context)
 
+@login_required
 def wind_chart_data(request):
     """
     API endpoint to get wind chart data for AJAX requests
@@ -755,7 +761,7 @@ def wind_chart_data(request):
     
     return JsonResponse(chart_data)
 
-
+@login_required
 def precipitation_dashboard(request):
     """
     Main precipitation dashboard view showing precipitation data across all stations
@@ -901,6 +907,7 @@ def precipitation_dashboard(request):
     
     return render(request, 'climate/precipitation_dashboard.html', context)
 
+@login_required
 def station_precipitation_detail(request, station_id):
     """
     Detailed view for a specific weather station's precipitation data
@@ -1022,6 +1029,7 @@ def station_precipitation_detail(request, station_id):
     
     return render(request, 'climate/station_precipitation_detail.html', context)
 
+@login_required
 def precipitation_chart_data(request):
     """
     API endpoint to get precipitation chart data for AJAX requests

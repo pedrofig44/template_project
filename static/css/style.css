@@ -400,3 +400,70 @@ h1, h2, h3 {
 .night-mode .bootstrap-datetimepicker-widget table td.today::before {
     border-bottom-color: var(--primary) !important;
 }
+
+
+/* =================================
+   CLEAN ANIMATIONS CSS
+   ================================= */
+
+/* Smooth scrolling for the entire page */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Fade-in animation for cards and elements */
+.card, .feature-card {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s ease-out;
+}
+
+.card.fade-in-visible, .feature-card.fade-in-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Progress bar animations */
+.progress {
+    overflow: hidden;
+}
+
+.progress .progress-bar {
+    transition: width 1.5s ease-in-out;
+}
+
+/* Sidebar toggle animations - ensure smooth transitions */
+.sidebar {
+    transition: all 0.3s ease;
+}
+
+.content {
+    transition: all 0.3s ease;
+}
+
+/* Smooth hover effects for buttons */
+.btn {
+    transition: all 0.3s ease;
+}
+
+/* Loading spinner improvements */
+#spinner {
+    transition: opacity 0.5s ease-out;
+}
+
+#spinner.show {
+    opacity: 1;
+}
+
+/* Ensure cards are initially hidden for animation */
+.card:not(.fade-in-visible) {
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+/* For immediate visibility on first load (optional) */
+.card.no-animation, .feature-card.no-animation {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+}

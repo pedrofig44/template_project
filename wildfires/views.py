@@ -13,7 +13,9 @@ from climate.models import FireRisk, StationObservation
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def wildfire_dashboard(request):
     """
     Wildfire dashboard view showing yearly wildfire statistics by concelho
@@ -163,341 +165,219 @@ def wildfire_dashboard(request):
     else:
         return render(request, 'wildfires/dashboard.html', context)
 
+def _dedupe_risks(risks):
+    """Return only the first FireRisk per concelho.dico_code to avoid duplicates."""
+    seen = set()
+    unique = []
+    for r in risks:
+        code = r.concelho.dico_code
+        if code not in seen:
+            seen.add(code)
+            unique.append(r)
+    return unique
 
+
+@login_required
 def wildfire_risk_map(request):
     """
-    View for displaying the wildfire risk map of Portugal
+    View for displaying the wildfire risk map of Portugal, without duplicate municipality entries.
     """
     try:
-        # Get the current date
+        # Current date
         current_date = timezone.now().date()
-        
-        # Get fire risk data for today and tomorrow
-        today_risks = FireRisk.objects.filter(
-            forecast_day=0  # Today's forecast
-        ).select_related('concelho')
-        
-        tomorrow_risks = FireRisk.objects.filter(
-            forecast_day=1  # Tomorrow's forecast
-        ).select_related('concelho')
-        
-        # Get all districts and concelhos
+
+        # Raw risk QuerySets
+        today_raw = FireRisk.objects.filter(forecast_day=0).select_related('concelho')
+        tomorrow_raw = FireRisk.objects.filter(forecast_day=1).select_related('concelho')
+
+        # Deduplicate by concelho
+        today_risks = _dedupe_risks(today_raw)
+        tomorrow_risks = _dedupe_risks(tomorrow_raw)
+
+        # Load all districts and concelhos
         all_distritos = Distrito.objects.all()
         all_concelhos = Concelho.objects.all()
-        
-        # Create a mapping of concelho dico_code to distrito district_code
+
+        # Map concelho code → distrito code
         concelho_to_distrito = {}
-        for concelho in all_concelhos:
+        for conc in all_concelhos:
             try:
-                # Use the string representation of district_code to avoid type issues
-                distrito_code = concelho.distrito.district_code
-                concelho_to_distrito[concelho.dico_code] = distrito_code
+                code = str(conc.dico_code)
+                distrito_code = str(conc.distrito.district_code)
+                concelho_to_distrito[code] = distrito_code
             except Exception as e:
-                # Log any issues with the relationship
-                print(f"Error mapping concelho {concelho.dico_code} to distrito: {e}")
-        
-        # Initialize risk distribution counters
-        risk_distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
-        
-        # Prepare data structures for today and tomorrow
+                print(f"Mapping error for {conc}: {e}")
+
+        # Initialize counters and structures
+        risk_distribution = {i: 0 for i in range(1, 6)}
         distritos_data = {}
-        tomorrow_distritos_data = {}
-        
-        # Initialize data for all districts
-        for distrito in all_distritos:
-            distritos_data[distrito.district_code] = {
-                'name': distrito.name,
-                'risk_level': 1,  # Default to low risk
-                'concelho_risks': []
-            }
-            tomorrow_distritos_data[distrito.district_code] = {
-                'name': distrito.name,
-                'risk_level': 1,  # Default to low risk
-                'concelho_risks': []
-            }
-        
-        # Process today's risks
+        tomorrow_data = {}
+        for dist in all_distritos:
+            key = str(dist.district_code)
+            distritos_data[key] = {'name': dist.name, 'risk_level': 1, 'concelho_risks': []}
+            tomorrow_data[key] = {'name': dist.name, 'risk_level': 1, 'concelho_risks': []}
+
+        # Process today's unique risks
         for risk in today_risks:
-            concelho = risk.concelho
-            distrito_id = concelho_to_distrito.get(concelho.dico_code)
-            
-            if distrito_id:
-                # Add concelho risk info
-                distritos_data[distrito_id]['concelho_risks'].append({
-                    'concelho': concelho.name,
-                    'risk_level': risk.risk_level,
-                    'dico_code': concelho.dico_code
-                })
-                
-                # Update risk distribution count
-                risk_level = int(risk.risk_level)  # Ensure it's an integer
-                risk_distribution[risk_level] = risk_distribution.get(risk_level, 0) + 1
-                
-                # Update max risk level for the distrito
-                if risk.risk_level > distritos_data[distrito_id]['risk_level']:
-                    distritos_data[distrito_id]['risk_level'] = risk.risk_level
-        
-        # Process tomorrow's risks
+            code = str(risk.concelho.dico_code)
+            dist_key = concelho_to_distrito.get(code)
+            if not dist_key:
+                continue
+
+            dataslot = distritos_data[dist_key]
+            dataslot['concelho_risks'].append({
+                'concelho': risk.concelho.name,
+                'risk_level': risk.risk_level,
+                'dico_code': code
+            })
+            lvl = int(risk.risk_level)
+            risk_distribution[lvl] += 1
+            if lvl > dataslot['risk_level']:
+                dataslot['risk_level'] = lvl
+
+        # Process tomorrow's unique risks
         for risk in tomorrow_risks:
-            concelho = risk.concelho
-            distrito_id = concelho_to_distrito.get(concelho.dico_code)
-            
-            if distrito_id:
-                # Add concelho risk info
-                tomorrow_distritos_data[distrito_id]['concelho_risks'].append({
-                    'concelho': concelho.name,
-                    'risk_level': risk.risk_level,
-                    'dico_code': concelho.dico_code
-                })
-                
-                # Update max risk level for the distrito
-                if risk.risk_level > tomorrow_distritos_data[distrito_id]['risk_level']:
-                    tomorrow_distritos_data[distrito_id]['risk_level'] = risk.risk_level
-        
-        # Get highest risk municipalities (those with level 4 or 5)
-        high_risk_concelhos = []
-        for risk in today_risks:
-            if risk.risk_level >= 4:
-                # Get distrito name safely
-                distrito_name = "Unknown"
-                try:
-                    distrito_id = concelho_to_distrito.get(risk.concelho.dico_code)
-                    if distrito_id in distritos_data:
-                        distrito_name = distritos_data[distrito_id]['name']
-                except Exception:
-                    pass
-                
-                high_risk_concelhos.append({
-                    'name': risk.concelho.name,
-                    'distrito': distrito_name,
-                    'risk_level': risk.risk_level
-                })
-        
-        # Count active wildfires (this would connect to a real data source in production)
-        # Placeholder data for demonstration
-        active_wildfires_count = 12
-        
-        # Get total area burned statistics (placeholder data)
-        total_area_burned = 3450.7  # hectares
-        
-        # Weather conditions (placeholder data)
-        weather_conditions = {
-            'avg_temp': 25.7,
-            'avg_humidity': 45,
-            'avg_wind_speed': 15,
-            'precipitation_7days': 0.5
-        }
-        
-        # Convert distrito data to JSON for JavaScript
+            code = str(risk.concelho.dico_code)
+            dist_key = concelho_to_distrito.get(code)
+            if not dist_key:
+                continue
+
+            slot = tomorrow_data[dist_key]
+            slot['concelho_risks'].append({
+                'concelho': risk.concelho.name,
+                'risk_level': risk.risk_level,
+                'dico_code': code
+            })
+            lvl = int(risk.risk_level)
+            if lvl > slot['risk_level']:
+                slot['risk_level'] = lvl
+
+        # High-risk concelhos (unique list)
+        high_risk = [
+            {'name': r.concelho.name,
+             'distrito': distritos_data.get(concelho_to_distrito.get(str(r.concelho.dico_code)), {}).get('name', 'Unknown'),
+             'risk_level': r.risk_level}
+            for r in today_risks if r.risk_level >= 4
+        ]
+
+        # Placeholder stats
+        active_count = 12
+        total_area = 3450.7
+        weather = {'avg_temp': 25.7, 'avg_humidity': 45, 'avg_wind_speed': 15, 'precipitation_7days': 0.5}
+
+        # JSON for JS
         district_risk_json = json.dumps(distritos_data)
-        tomorrow_district_risk_json = json.dumps(tomorrow_distritos_data)
-        
-        # Generate the risk distribution pie chart
-        risk_labels = ['Reduced Risk', 'Moderate Risk', 'High Risk', 'Very High Risk', 'Maximum Risk']
-        risk_colors = ['#28a745', '#ffc107', '#fd7e14', '#dc3545', '#990000']
-        risk_values = [risk_distribution[1], risk_distribution[2], risk_distribution[3], risk_distribution[4], risk_distribution[5]]
-        
-        # Prepare data for the pie chart
-        pie_data = {
-            'labels': risk_labels,
-            'values': risk_values,
-            'colors': risk_colors
-        }
-        
-        # Generate the pie chart using the utility function
-        risk_distribution_chart = generate_pie_chart(
-            data=pie_data,
-            title='Municipality Risk Distribution',
-            height=250
-        )
-        
-        # Prepare context for template
+        tomorrow_json = json.dumps(tomorrow_data)
+
+        # Pie chart
+        labels = ['Reduced Risk','Moderate Risk','High Risk','Very High','Maximum']
+        values = [risk_distribution[i] for i in range(1,6)]
+        pie = generate_pie_chart({'labels': labels, 'values': values, 'colors': ['#28a745','#ffc107','#fd7e14','#dc3545','#990000']},
+                                  title='Municipality Risk Distribution', height=250)
+
         context = {
             'distritos_data': distritos_data,
             'district_risk_json': district_risk_json,
-            'tomorrow_district_risk_json': tomorrow_district_risk_json,
+            'tomorrow_district_risk_json': tomorrow_json,
             'current_date': current_date,
-            'active_wildfires': active_wildfires_count,
-            'total_area_burned': total_area_burned,
-            'high_risk_concelhos': high_risk_concelhos,
+            'active_wildfires': active_count,
+            'total_area_burned': total_area,
+            'high_risk_concelhos': high_risk,
             'risk_distribution': risk_distribution,
-            'weather_conditions': weather_conditions,
-            'risk_distribution_chart': risk_distribution_chart,  # Add the chart to the context
+            'weather_conditions': weather,
+            'risk_distribution_chart': pie,
         }
-        
         return render(request, 'wildfires/risk_map.html', context)
-        
+
     except Exception as e:
-        # Log the error and return a simple error page
         print(f"Error in wildfire_risk_map view: {e}")
-        error_context = {
-            'error_message': "There was an error loading the wildfire risk map. Please try again later.",
-            'details': str(e) if settings.DEBUG else ""
-        }
-        return render(request, 'wildfires/risk_map_error.html', error_context, status=500)
-    
-    
-    
+        error_ctx = {'error_message': "Error loading wildfire risk map.", 'details': str(e) if settings.DEBUG else ''}
+        return render(request, 'wildfires/risk_map_error.html', error_ctx, status=500)
+
+
+@login_required
 def district_detail(request, district_code):
     """
-    Detailed view for a specific district, showing wildfire risk information
+    Detailed view for a specific district, without duplicate municipality entries.
     """
-    # Get the distrito or return 404
     distrito = get_object_or_404(Distrito, district_code=district_code)
-    
-    # Get current date
     current_date = timezone.now().date()
-    
-    # Get all concelhos in this distrito
-    concelhos = Concelho.objects.filter(distrito=distrito).order_by('name')
-    
-    # Get current fire risks for all concelhos in this distrito
-    fire_risks = FireRisk.objects.filter(
-        concelho__distrito=distrito,
-        forecast_day=0  # Today's forecast
-    ).select_related('concelho')
-    
-    # Get tomorrow's fire risks
-    tomorrow_risks = FireRisk.objects.filter(
-        concelho__distrito=distrito,
-        forecast_day=1  # Tomorrow's forecast
-    ).select_related('concelho')
-    
-    # Calculate distrito-level risk (highest risk among its concelhos)
-    distrito_risk = 1  # Default to low risk
-    for risk in fire_risks:
-        if risk.risk_level > distrito_risk:
-            distrito_risk = risk.risk_level
-    
-    # Calculate tomorrow's distrito-level risk
-    tomorrow_distrito_risk = 1  # Default to low risk
-    for risk in tomorrow_risks:
-        if risk.risk_level > tomorrow_distrito_risk:
-            tomorrow_distrito_risk = risk.risk_level
-    
-    # Calculate risk distribution
-    risk_distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
-    for risk in fire_risks:
-        risk_level = int(risk.risk_level)
-        risk_distribution[risk_level] = risk_distribution.get(risk_level, 0) + 1
-    
 
-    
-    # Get weather stations in this district
-    weather_stations = WeatherStation.objects.filter(concelho__distrito=distrito)
-    
-    # Calculate time range for recent observations
+    # Raw risks and dedupe
+    raw_today = FireRisk.objects.filter(concelho__distrito=distrito, forecast_day=0).select_related('concelho')
+    raw_tomorrow = FireRisk.objects.filter(concelho__distrito=distrito, forecast_day=1).select_related('concelho')
+    fire_risks = _dedupe_risks(raw_today)
+    tomorrow_risks = _dedupe_risks(raw_tomorrow)
+
+    # Distrito-level risk
+    distrito_risk = max((r.risk_level for r in fire_risks), default=1)
+    tomorrow_risk = max((r.risk_level for r in tomorrow_risks), default=1)
+
+    # Risk distribution
+    risk_dist = {i: 0 for i in range(1,6)}
+    for r in fire_risks:
+        risk_dist[int(r.risk_level)] += 1
+
+    # Weather stations & observations
+    stations = WeatherStation.objects.filter(concelho__distrito=distrito)
     now = timezone.now()
-    day_ago = now - timedelta(hours=24)
-    
-    # Get recent observations for these stations
-    recent_observations = StationObservation.objects.filter(
-        station__in=weather_stations,
-        timestamp__gte=day_ago,
-        temperature__gt=-90  # Filter out invalid readings
-    ).exclude(
-        humidity=-99.0
-    ).exclude(
-        wind_speed_kmh=-99.0
-    )
-    
-    # Initialize default weather conditions
-    weather_conditions = {
-        'temperature': 22,
-        'humidity': 45,
-        'wind_speed': 8,
-        'wind_direction': 'NE',
-        'precipitation_chance': 5,
-        'last_rainfall': current_date - timedelta(days=7),
-    }
-    
-    # If we have observations, use real data
-    if recent_observations.exists():
-        # Calculate average weather conditions
-        weather_stats = recent_observations.aggregate(
-            avg_temp=Avg('temperature'),
-            avg_humidity=Avg('humidity'),
-            avg_wind_speed=Avg('wind_speed_kmh')
-        )
-        
-        # Get most recent observation for current conditions
-        latest_observation = recent_observations.order_by('-timestamp').first()
-        
-        # Direction mapping for human-readable output
-        direction_map = {
-            0: 'No Direction',
-            1: 'North', 
-            2: 'Northeast', 
-            3: 'East',
-            4: 'Southeast', 
-            5: 'South', 
-            6: 'Southwest',
-            7: 'West', 
-            8: 'Northwest', 
-            9: 'North'
-        }
-        
-        # Get observations with precipitation
-        week_ago = now - timedelta(days=7)
-        precipitation_observations = StationObservation.objects.filter(
-            station__in=weather_stations,
-            timestamp__gte=week_ago,
+    obs_24h = StationObservation.objects.filter(
+        station__in=stations,
+        timestamp__gte=now - timedelta(hours=24)
+    ).exclude(humidity=-99.0).exclude(wind_speed_kmh=-99.0)
+
+    # Default weather
+    weather = {'temperature':22,'humidity':45,'wind_speed':8,'wind_direction':'NE','precipitation_chance':5,'last_rainfall':current_date - timedelta(days=7)}
+    if obs_24h.exists():
+        stats = obs_24h.aggregate(avg_temp=Avg('temperature'), avg_humidity=Avg('humidity'), avg_wind_speed=Avg('wind_speed_kmh'))
+        latest = obs_24h.order_by('-timestamp').first()
+        dir_map = {1:'North',2:'Northeast',3:'East',4:'Southeast',5:'South',6:'Southwest',7:'West',8:'Northwest'}
+        rain_obs = StationObservation.objects.filter(
+            station__in=stations,
+            timestamp__gte=now - timedelta(days=7),
             precipitation__gt=0
         ).order_by('-timestamp')
-        
-        # Find last rainfall date
-        last_rainfall = precipitation_observations.first()
-        
-        # Calculate precipitation chance based on humidity
-        precipitation_chance = 5  # Default value
-        if latest_observation and latest_observation.humidity:
-            if latest_observation.humidity > 80:
-                precipitation_chance = 45
-            elif latest_observation.humidity > 70:
-                precipitation_chance = 25
-            elif latest_observation.humidity > 60:
-                precipitation_chance = 10
-        
-        # Update weather conditions with real data
-        weather_conditions = {
-            'temperature': round(weather_stats['avg_temp'], 1) if weather_stats['avg_temp'] else 22,
-            'humidity': round(weather_stats['avg_humidity']) if weather_stats['avg_humidity'] else 45,
-            'wind_speed': round(weather_stats['avg_wind_speed']) if weather_stats['avg_wind_speed'] else 8,
-            'wind_direction': direction_map.get(latest_observation.wind_direction if latest_observation else 0, 'Variable'),
-            'precipitation_chance': precipitation_chance,
-            'last_rainfall': last_rainfall.timestamp.date() if last_rainfall else current_date - timedelta(days=7),
+        last_rain = rain_obs.first()
+        precip_chance = 5
+        if latest.humidity > 80: precip_chance = 45
+        elif latest.humidity > 70: precip_chance = 25
+        elif latest.humidity > 60: precip_chance = 10
+        weather = {
+            'temperature': round(stats['avg_temp'],1),
+            'humidity': round(stats['avg_humidity']),
+            'wind_speed': round(stats['avg_wind_speed']),
+            'wind_direction': dir_map.get(latest.wind_direction, 'Variable'),
+            'precipitation_chance': precip_chance,
+            'last_rainfall': last_rain.timestamp.date() if last_rain else current_date - timedelta(days=7)
         }
-    
-    # Mock active wildfires - keep this for demonstration
+
+    # Context concelho risks as dict (unique)
+    concelho_risks = {r.concelho.dico_code: r.risk_level for r in fire_risks}
+    tomorrow_concelho_risks = {r.concelho.dico_code: r.risk_level for r in tomorrow_risks}
+
+    # Mock data (unchanged)
     active_wildfires = []
-    if distrito_risk >= 4:  # Only show mock active wildfires for high risk districts
+    if distrito_risk >= 4:
         active_wildfires = [
-            {'location': 'Vale de Cambra', 'start_time': timezone.now() - timedelta(hours=5), 'status': 'Active', 'area_ha': 12.5},
-            {'location': 'Serra da Freita', 'start_time': timezone.now() - timedelta(hours=8), 'status': 'Contained', 'area_ha': 8.2},
+            {'location': 'Vale de Cambra', 'start_time': now - timedelta(hours=5), 'status': 'Active', 'area_ha': 12.5},
+            {'location': 'Serra da Freita', 'start_time': now - timedelta(hours=8), 'status': 'Contained', 'area_ha': 8.2},
         ]
-    
-    # Historical wildfires (Mock data for now)
     historical_wildfires = [
-        {'date': '2023-08-12', 'location': 'Serra de Santa Justa', 'area_ha': 145.8, 'duration_hours': 48},
-        {'date': '2023-07-24', 'location': 'Parque Natural do Alvão', 'area_ha': 78.2, 'duration_hours': 36},
-        {'date': '2023-06-30', 'location': 'Serra da Freita', 'area_ha': 210.5, 'duration_hours': 72},
-        {'date': '2022-08-05', 'location': 'Vale de Cambra', 'area_ha': 320.7, 'duration_hours': 96},
-        {'date': '2022-07-17', 'location': 'Serra do Marão', 'area_ha': 185.3, 'duration_hours': 60},
+        {'date': '2023-08-12','location': 'Serra de Santa Justa','area_ha': 145.8,'duration_hours': 48},
+        # ... etc.
     ]
-    
-    # Prepare context for template
+
     context = {
         'distrito': distrito,
         'current_date': current_date,
         'distrito_risk': distrito_risk,
-        'tomorrow_distrito_risk': tomorrow_distrito_risk,
-        'risk_distribution': risk_distribution,
+        'tomorrow_distrito_risk': tomorrow_risk,
+        'risk_distribution': risk_dist,
         'historical_wildfires': historical_wildfires,
         'active_wildfires': active_wildfires,
-        'weather_conditions': weather_conditions,
-        'concelhos': concelhos,
-        'concelho_risks': {risk.concelho.dico_code: risk.risk_level for risk in fire_risks},
-        'tomorrow_concelho_risks': {risk.concelho.dico_code: risk.risk_level for risk in tomorrow_risks},
+        'weather_conditions': weather,
+        'concelhos': Concelho.objects.filter(distrito=distrito).order_by('name'),
+        'concelho_risks': concelho_risks,
+        'tomorrow_concelho_risks': tomorrow_concelho_risks,
     }
-    
     return render(request, 'wildfires/district_detail.html', context)

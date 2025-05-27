@@ -36,6 +36,11 @@ urlpatterns += i18n_patterns(
     prefix_default_language=False
 )
 
+handler404 = 'django.views.defaults.page_not_found'
+handler500 = 'django.views.defaults.server_error'
+handler403 = 'django.views.defaults.permission_denied'
+handler400 = 'django.views.defaults.bad_request'
+
 # Add static and media URL patterns if in debug mode
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

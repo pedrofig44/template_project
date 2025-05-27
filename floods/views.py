@@ -8,7 +8,9 @@ import polars as pl
 from .models import WaterBody, WaterStation, WaterReading, FloodWarning
 from location.models import Concelho
 from dashboard.utils import generate_line_chart, generate_bar_chart
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def floods_dashboard(request):
     """
     Main floods dashboard view showing overall water level and flood risk data
@@ -77,6 +79,7 @@ def floods_dashboard(request):
     
     return render(request, 'floods/flood_dashboard.html', context)
 
+@login_required
 def station_detail(request, station_id):
     """
     View for detailed information about a specific water station
@@ -206,6 +209,7 @@ def station_detail(request, station_id):
     
     return render(request, 'floods/station_detail.html', context)
 
+@login_required
 def water_body_detail(request, water_body_id):
     """
     View for detailed information about a specific water body

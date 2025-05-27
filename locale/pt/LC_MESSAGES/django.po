@@ -48,7 +48,7 @@ msgstr ""
 
 #: .\templates\home\index.html:17
 msgid "Dashboard"
-msgstr "Painel de Controle"
+msgstr "Painel de Controlo"
 
 #: .\templates\home\index.html:20 .\templates\home\index.html:192
 msgid "Learn More"

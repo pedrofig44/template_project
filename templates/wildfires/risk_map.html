@@ -230,39 +230,32 @@
                               '#28a745';
         }
         
-        // Function to get risk level for a district
+        function normalizeId(id) {
+            return String(parseInt(id, 10));
+        }
+        
         function getRiskForDistrict(districtId) {
-            // Ensure district ID is padded to 2 digits
-            const paddedId = districtId.padStart(2, '0');
-            
-            if (currentRiskData && currentRiskData[paddedId]) {
-                return currentRiskData[paddedId].risk_level;
-            }
-            return 1; // Default to lowest risk level if no data
+            const key = normalizeId(districtId);
+            return (currentRiskData && currentRiskData[key])
+                ? currentRiskData[key].risk_level
+                : 1;
         }
         
-        // Function to get district name
         function getDistrictName(districtId) {
-            // Ensure district ID is padded to 2 digits
-            const paddedId = districtId.padStart(2, '0');
-            
-            if (currentRiskData && currentRiskData[paddedId]) {
-                return currentRiskData[paddedId].name;
-            }
-            return null; // Return null to fall back to GeoJSON property
+            const key = normalizeId(districtId);
+            return (currentRiskData && currentRiskData[key])
+                ? currentRiskData[key].name
+                : null;
         }
         
-        // Function to get concelho risks for a district
         function getConcelhosForDistrict(districtId) {
-            // Ensure district ID is padded to 2 digits
-            const paddedId = districtId.padStart(2, '0');
-            
-            if (currentRiskData && currentRiskData[paddedId]) {
-                return currentRiskData[paddedId].concelho_risks || [];
-            }
-            return [];
+            const key = normalizeId(districtId);
+            return (currentRiskData && currentRiskData[key])
+                ? currentRiskData[key].concelho_risks
+                : [];
         }
-        
+
+
         // Load the GeoJSON file for Portugal districts
         fetch('/static/location/continente_distritos.json')
             .then(response => response.json())
