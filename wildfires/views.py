@@ -182,117 +182,213 @@ def wildfire_risk_map(request):
     """
     View for displaying the wildfire risk map of Portugal, without duplicate municipality entries.
     """
-    try:
-        # Current date
-        current_date = timezone.now().date()
+    # Current date
+    current_date = timezone.now().date()
 
-        # Raw risk QuerySets
-        today_raw = FireRisk.objects.filter(forecast_day=0).select_related('concelho')
-        tomorrow_raw = FireRisk.objects.filter(forecast_day=1).select_related('concelho')
+    # Raw risk QuerySets
+    today_raw = FireRisk.objects.filter(forecast_day=0).select_related('concelho')
+    tomorrow_raw = FireRisk.objects.filter(forecast_day=1).select_related('concelho')
 
-        # Deduplicate by concelho
-        today_risks = _dedupe_risks(today_raw)
-        tomorrow_risks = _dedupe_risks(tomorrow_raw)
+    # Deduplicate by concelho
+    today_risks = _dedupe_risks(today_raw)
+    tomorrow_risks = _dedupe_risks(tomorrow_raw)
 
-        # Load all districts and concelhos
-        all_distritos = Distrito.objects.all()
-        all_concelhos = Concelho.objects.all()
+    # Load all districts and concelhos
+    all_distritos = Distrito.objects.all()
+    all_concelhos = Concelho.objects.all()
 
-        # Map concelho code → distrito code
-        concelho_to_distrito = {}
-        for conc in all_concelhos:
-            try:
-                code = str(conc.dico_code)
-                distrito_code = str(conc.distrito.district_code)
-                concelho_to_distrito[code] = distrito_code
-            except Exception as e:
-                print(f"Mapping error for {conc}: {e}")
+    # Map concelho code → distrito code
+    concelho_to_distrito = {}
+    for conc in all_concelhos:
+        try:
+            code = str(conc.dico_code)
+            distrito_code = str(conc.distrito.district_code)
+            concelho_to_distrito[code] = distrito_code
+        except Exception as e:
+            print(f"Mapping error for {conc}: {e}")
 
-        # Initialize counters and structures
-        risk_distribution = {i: 0 for i in range(1, 6)}
-        distritos_data = {}
-        tomorrow_data = {}
-        for dist in all_distritos:
-            key = str(dist.district_code)
-            distritos_data[key] = {'name': dist.name, 'risk_level': 1, 'concelho_risks': []}
-            tomorrow_data[key] = {'name': dist.name, 'risk_level': 1, 'concelho_risks': []}
+    # Initialize counters and structures
+    risk_distribution = {i: 0 for i in range(1, 6)}
+    distritos_data = {}
+    tomorrow_data = {}
+    for dist in all_distritos:
+        key = str(dist.district_code)
+        distritos_data[key] = {'name': dist.name, 'risk_level': 1, 'concelho_risks': []}
+        tomorrow_data[key] = {'name': dist.name, 'risk_level': 1, 'concelho_risks': []}
 
-        # Process today's unique risks
-        for risk in today_risks:
+    # Helper function to validate and convert risk level
+    def get_valid_risk_level(risk_obj):
+        """Convert risk_level to valid integer between 1-5, return None if invalid"""
+        try:
+            if risk_obj.risk_level is None:
+                print(f"Warning: FireRisk {risk_obj.id} has null risk_level")
+                return None
+            
+            level = int(risk_obj.risk_level)
+            if level < 1 or level > 5:
+                print(f"Warning: FireRisk {risk_obj.id} has invalid risk_level: {level}")
+                return None
+                
+            return level
+        except (ValueError, TypeError) as e:
+            print(f"Warning: FireRisk {risk_obj.id} has non-numeric risk_level: {risk_obj.risk_level} - {e}")
+            return None
+
+    # Process today's unique risks with error handling
+    for risk in today_risks:
+        try:
+            # Validate concelho exists
+            if not risk.concelho:
+                print(f"Warning: FireRisk {risk.id} has no concelho")
+                continue
+            
+            # Validate risk level
+            lvl = get_valid_risk_level(risk)
+            if lvl is None:
+                continue  # Skip invalid risk levels
+            
             code = str(risk.concelho.dico_code)
             dist_key = concelho_to_distrito.get(code)
             if not dist_key:
+                print(f"Warning: No distrito mapping for concelho {code}")
+                continue
+
+            # Safely access distrito data
+            if dist_key not in distritos_data:
+                print(f"Warning: Distrito {dist_key} not found in distritos_data")
                 continue
 
             dataslot = distritos_data[dist_key]
             dataslot['concelho_risks'].append({
                 'concelho': risk.concelho.name,
-                'risk_level': risk.risk_level,
+                'risk_level': lvl,  # Use validated level
                 'dico_code': code
             })
-            lvl = int(risk.risk_level)
-            risk_distribution[lvl] += 1
+            
+            # Safely update risk distribution
+            if lvl in risk_distribution:
+                risk_distribution[lvl] += 1
+            else:
+                print(f"Warning: Unexpected risk level {lvl} not in distribution dict")
+            
+            # Update distrito max risk level
             if lvl > dataslot['risk_level']:
                 dataslot['risk_level'] = lvl
+                
+        except Exception as e:
+            print(f"Error processing today's risk {getattr(risk, 'id', 'unknown')}: {e}")
+            continue
 
-        # Process tomorrow's unique risks
-        for risk in tomorrow_risks:
+    # Process tomorrow's unique risks with error handling
+    for risk in tomorrow_risks:
+        try:
+            # Validate concelho exists
+            if not risk.concelho:
+                print(f"Warning: Tomorrow FireRisk {risk.id} has no concelho")
+                continue
+            
+            # Validate risk level
+            lvl = get_valid_risk_level(risk)
+            if lvl is None:
+                continue  # Skip invalid risk levels
+            
             code = str(risk.concelho.dico_code)
             dist_key = concelho_to_distrito.get(code)
             if not dist_key:
                 continue
 
+            # Safely access distrito data
+            if dist_key not in tomorrow_data:
+                print(f"Warning: Distrito {dist_key} not found in tomorrow_data")
+                continue
+
             slot = tomorrow_data[dist_key]
             slot['concelho_risks'].append({
                 'concelho': risk.concelho.name,
-                'risk_level': risk.risk_level,
+                'risk_level': lvl,  # Use validated level
                 'dico_code': code
             })
-            lvl = int(risk.risk_level)
+            
+            # Update distrito max risk level
             if lvl > slot['risk_level']:
                 slot['risk_level'] = lvl
+                
+        except Exception as e:
+            print(f"Error processing tomorrow's risk {getattr(risk, 'id', 'unknown')}: {e}")
+            continue
 
-        # High-risk concelhos (unique list)
-        high_risk = [
-            {'name': r.concelho.name,
-             'distrito': distritos_data.get(concelho_to_distrito.get(str(r.concelho.dico_code)), {}).get('name', 'Unknown'),
-             'risk_level': r.risk_level}
-            for r in today_risks if r.risk_level >= 4
-        ]
+    # High-risk concelhos (unique list) with error handling
+    high_risk = []
+    for r in today_risks:
+        try:
+            # Validate risk level for high-risk filtering
+            lvl = get_valid_risk_level(r)
+            if lvl is None or lvl < 4:
+                continue
+            
+            if not r.concelho:
+                continue
+                
+            code = str(r.concelho.dico_code)
+            dist_key = concelho_to_distrito.get(code)
+            distrito_name = "Unknown"
+            
+            if dist_key and dist_key in distritos_data:
+                distrito_name = distritos_data[dist_key].get('name', 'Unknown')
+            
+            high_risk.append({
+                'name': r.concelho.name,
+                'distrito': distrito_name,
+                'risk_level': lvl
+            })
+            
+        except Exception as e:
+            print(f"Error processing high-risk concelho for risk {getattr(r, 'id', 'unknown')}: {e}")
+            continue
 
-        # Placeholder stats
-        active_count = 12
-        total_area = 3450.7
-        weather = {'avg_temp': 25.7, 'avg_humidity': 45, 'avg_wind_speed': 15, 'precipitation_7days': 0.5}
+    # Placeholder stats
+    active_count = 12
+    total_area = 3450.7
+    weather = {'avg_temp': 25.7, 'avg_humidity': 45, 'avg_wind_speed': 15, 'precipitation_7days': 0.5}
 
-        # JSON for JS
+    # JSON for JS - with error handling
+    try:
         district_risk_json = json.dumps(distritos_data)
         tomorrow_json = json.dumps(tomorrow_data)
+    except (TypeError, ValueError) as e:
+        print(f"Error serializing district data to JSON: {e}")
+        # Fallback to empty data
+        district_risk_json = json.dumps({})
+        tomorrow_json = json.dumps({})
 
-        # Pie chart
+    # Pie chart - with error handling
+    try:
         labels = ['Reduced Risk','Moderate Risk','High Risk','Very High','Maximum']
         values = [risk_distribution[i] for i in range(1,6)]
-        pie = generate_pie_chart({'labels': labels, 'values': values, 'colors': ['#28a745','#ffc107','#fd7e14','#dc3545','#990000']},
-                                  title='Municipality Risk Distribution', height=250)
-
-        context = {
-            'distritos_data': distritos_data,
-            'district_risk_json': district_risk_json,
-            'tomorrow_district_risk_json': tomorrow_json,
-            'current_date': current_date,
-            'active_wildfires': active_count,
-            'total_area_burned': total_area,
-            'high_risk_concelhos': high_risk,
-            'risk_distribution': risk_distribution,
-            'weather_conditions': weather,
-            'risk_distribution_chart': pie,
+        pie_data = {
+            'labels': labels, 
+            'values': values, 
+            'colors': ['#28a745','#ffc107','#fd7e14','#dc3545','#990000']
         }
-        return render(request, 'wildfires/risk_map.html', context)
-
+        pie = generate_pie_chart(pie_data, title='Municipality Risk Distribution', height=250)
     except Exception as e:
-        print(f"Error in wildfire_risk_map view: {e}")
-        error_ctx = {'error_message': "Error loading wildfire risk map.", 'details': str(e) if settings.DEBUG else ''}
-        return render(request, 'wildfires/risk_map_error.html', error_ctx, status=500)
+        print(f"Error generating pie chart: {e}")
+        # Fallback to simple chart data
+        pie = json.dumps({'data': [], 'layout': {}})
+
+    context = {
+        'distritos_data': distritos_data,
+        'district_risk_json': district_risk_json,
+        'tomorrow_district_risk_json': tomorrow_json,
+        'current_date': current_date,
+        'active_wildfires': active_count,
+        'total_area_burned': total_area,
+        'high_risk_concelhos': high_risk,
+        'risk_distribution': risk_distribution,
+        'weather_conditions': weather,
+        'risk_distribution_chart': pie,
+    }
+    return render(request, 'wildfires/risk_map.html', context)
 
 
 @login_required
