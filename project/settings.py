@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     "utils",
     "wildfires",
     "floods",
-    "home"
+    "home",
+    "predictions"
 ]
 
 MIDDLEWARE = [

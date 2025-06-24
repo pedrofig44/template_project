@@ -152,9 +152,24 @@
     });
 
     document.addEventListener('htmx:afterSwap', function(event) {
-        // Apply night mode to any new content
-        if (document.body.classList.contains('night-mode')) {
-            applyNightMode();
+        if (event.detail.target.id === 'dashboard-content') {
+            // Hide and show the content to force repaint
+            const target = event.detail.target;
+            target.style.visibility = 'hidden';
+            
+            requestAnimationFrame(() => {
+                target.style.visibility = 'visible';
+                
+                // Always do a minimal scroll (1 pixel down, then back up)
+                const currentScroll = window.pageYOffset;
+                window.scrollTo({ top: currentScroll + 1, behavior: 'instant' });
+                window.scrollTo({ top: currentScroll, behavior: 'instant' });
+                
+                // Apply night mode to any new content after repaint
+                if (document.body.classList.contains('night-mode')) {
+                    setTimeout(applyNightMode, 10);
+                }
+            });
         }
     });
     

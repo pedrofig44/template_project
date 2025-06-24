@@ -278,6 +278,7 @@ h1, h2, h3 {
     border-color: var(--primary);
 }
 
+
 /* Night Mode Styles */
 .night-mode {
     background-color: var(--night-mode-background) !important;

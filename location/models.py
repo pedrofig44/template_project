@@ -64,6 +64,7 @@ class Concelho(models.Model):
     )
     name = models.CharField(max_length=100)
     
+    
     class Meta:
         unique_together = ('distrito', 'concelho_code')
         ordering = ['dico_code']
@@ -163,3 +164,99 @@ class SensorInfo(models.Model):
 
     def __str__(self):
         return f"{self.model} ({self.sensor_id})"
+    
+
+class ConcelhoLandOccupation(models.Model):
+    """
+    Land occupation/soil usage data for each concelho
+    Based on training data features for land classification
+    """
+    concelho = models.ForeignKey(
+        Concelho, 
+        on_delete=models.CASCADE, 
+        related_name='land_occupation'
+    )
+    
+    # Area data
+    area_ha = models.DecimalField(
+        max_digits=12, decimal_places=4,
+        help_text="Area of the concelho in hectares"
+    )
+    
+    # Land occupation percentages (from training data)
+    territorios_artificializados = models.DecimalField(
+        max_digits=8, decimal_places=4,
+        help_text="Percentage of artificalized territories"
+    )
+    pastagens = models.DecimalField(
+        max_digits=8, decimal_places=4,
+        help_text="Percentage of pastures"
+    )
+    florestas = models.DecimalField(
+        max_digits=8, decimal_places=4,
+        help_text="Percentage of forests"
+    )
+    massas_agua_superficiais = models.DecimalField(
+        max_digits=8, decimal_places=4,
+        help_text="Percentage of surface water bodies"
+    )
+    matos = models.DecimalField(
+        max_digits=8, decimal_places=4,
+        help_text="Percentage of scrubland/bushes"
+    )
+    superficies_agroflorestais = models.DecimalField(
+        max_digits=8, decimal_places=4,
+        help_text="Percentage of agroforestry surfaces (SAF)"
+    )
+    espacos_descobertos_pouca_vegetacao = models.DecimalField(
+        max_digits=8, decimal_places=4,
+        help_text="Percentage of bare ground or sparse vegetation"
+    )
+    agricultura = models.DecimalField(
+        max_digits=8, decimal_places=4,
+        help_text="Percentage of agriculture"
+    )
+    zonas_humidas = models.DecimalField(
+        max_digits=8, decimal_places=4,
+        help_text="Percentage of wetlands"
+    )
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['concelho']
+        ordering = ['concelho']
+        verbose_name = "Concelho Land Occupation"
+        verbose_name_plural = "Concelho Land Occupations"
+        indexes = [
+            models.Index(fields=['concelho']),
+        ]
+    
+    def __str__(self):
+        return f"Land occupation for {self.concelho.name}"
+    
+    @property
+    def total_percentage(self):
+        """Calculate total percentage (should be close to 100)"""
+        return (
+            self.territorios_artificializados + self.pastagens + self.florestas +
+            self.massas_agua_superficiais + self.matos + self.superficies_agroflorestais +
+            self.espacos_descobertos_pouca_vegetacao + self.agricultura + self.zonas_humidas
+        )
+    
+    def get_land_occupation_dict(self):
+        """Return land occupation data as dictionary for ML model input"""
+        return {
+            'Territórios artificializados': float(self.territorios_artificializados),
+            'Pastagens': float(self.pastagens),
+            'Florestas': float(self.florestas),
+            'Massas de água superficiais': float(self.massas_agua_superficiais),
+            'Matos': float(self.matos),
+            'Superfícies agroflorestais (SAF)': float(self.superficies_agroflorestais),
+            'Espaços descobertos ou com pouca vegetação': float(self.espacos_descobertos_pouca_vegetacao),
+            'Agricultura': float(self.agricultura),
+            'Zonas húmidas': float(self.zonas_humidas),
+            'area_ha': float(self.area_ha),
+        }

@@ -95,6 +95,15 @@
             }
         }
     }
+
+    function updateDropdownButtonText() {
+        const activeItem = document.querySelector('#concelhoDropdown + .dropdown-menu .dropdown-item.active');
+        const button = document.getElementById('concelhoDropdown');
+        
+        if (activeItem && button) {
+            button.textContent = activeItem.textContent.trim();
+        }
+    }
     
     // Initialize charts when the page first loads
     document.addEventListener('DOMContentLoaded', initializeCharts);
@@ -102,12 +111,27 @@
     // Re-initialize charts after HTMX content swap
     document.addEventListener('htmx:afterSwap', function(event) {
         if (event.detail.target.id === 'dashboard-content') {
-            // Small timeout to ensure DOM is fully updated
-            setTimeout(initializeCharts, 50);
+            // Hide and show the content to force repaint
+            const target = event.detail.target;
+            target.style.visibility = 'hidden';
+            
+            requestAnimationFrame(() => {
+                target.style.visibility = 'visible';
+                
+                // Always do a minimal scroll (1 pixel down, then back up)
+                const currentScroll = window.pageYOffset;
+                window.scrollTo({ top: currentScroll + 1, behavior: 'instant' });
+                window.scrollTo({ top: currentScroll, behavior: 'instant' });
+                
+                // Initialize charts
+                setTimeout(initializeCharts, 50);
+            });
         }
     });
     
     // Apply night mode on toggle
     document.addEventListener('nightModeToggled', applyChartNightMode);
+
+    
 </script>
 {% endblock %}
