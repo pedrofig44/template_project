@@ -159,14 +159,40 @@ class ConcelhoTemporalFeatures(models.Model):
         return f"Temporal features for {self.feature_date}"
     
     def save(self, *args, **kwargs):
-        """Auto-calculate temporal features from feature_date"""
+        """Auto-calculate ALL temporal features from feature_date"""
         if self.feature_date:
-            # Calculate temporal features
+            # Basic temporal features
             self.year = self.feature_date.year
             self.month = self.feature_date.month
             self.day_of_year = self.feature_date.timetuple().tm_yday
             
-            # Calculate cyclical features using correct formulas
+            # Normalize year (assuming 2015-2025 range - adjust based on your training data)
+            self.year_norm = (self.year - 2015) / (2025 - 2015)
+            
+            # FIXED: Fire season calculations (May 1 - October 31 = 184 days)
+            # Calculate day of year for May 1 (accounts for leap years)
+            import datetime
+            may_1 = datetime.date(self.feature_date.year, 5, 1)
+            oct_31 = datetime.date(self.feature_date.year, 10, 31)
+            may_1_day = may_1.timetuple().tm_yday
+            oct_31_day = oct_31.timetuple().tm_yday
+            
+            if may_1_day <= self.day_of_year <= oct_31_day:
+                # Within fire season: calculate day within season (1-184)
+                self.day_of_season = self.day_of_year - may_1_day + 1
+            else:
+                # Outside fire season
+                self.day_of_season = 0
+            
+            # Normalize day of season (1-184 -> 0-1)
+            if self.day_of_season > 0:
+                # 184 total days in fire season (May has 31, June 30, July 31, Aug 31, Sep 30, Oct 31)
+                total_fire_season_days = 184
+                self.day_of_season_norm = (self.day_of_season - 1) / (total_fire_season_days - 1)
+            else:
+                self.day_of_season_norm = 0.0
+            
+            # Cyclical features using your training formulas
             day_angle = math.pi * (self.day_of_year - 135) / 77
             self.day_sin = math.sin(day_angle)
             self.day_cos = math.cos(day_angle)
