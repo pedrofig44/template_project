@@ -64,6 +64,11 @@ class Concelho(models.Model):
     )
     name = models.CharField(max_length=100)
     
+    in_wildfire_training = models.BooleanField(
+        default=False,
+        help_text="Whether this concelho was included in wildfire prediction model training data (251 out of 308 concelhos)"
+    )
+    
     
     class Meta:
         unique_together = ('distrito', 'concelho_code')

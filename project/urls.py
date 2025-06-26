@@ -31,6 +31,7 @@ urlpatterns += i18n_patterns(
     path('utils/', include('utils.urls', namespace='utils')),
     path('wildfires/', include('wildfires.urls', namespace='wildfires')),
     path('floods/', include('floods.urls', namespace='floods')),
+    path('predictions/', include('predictions.urls', namespace='predictions')),
     
     # Optional: set to False to prevent adding language prefix to default language
     prefix_default_language=False
