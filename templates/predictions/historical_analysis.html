@@ -1,0 +1,557 @@
+<!-- templates/predictions/historical_analysis.html -->
+{% extends 'includes/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid pt-4 px-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="text-start">
+                📈 Historical Analysis
+                <span class="badge bg-info ms-2">{{ total_predictions }} predictions analyzed</span>
+            </h2>
+            <p class="text-muted small mb-0">Comprehensive analysis of wildfire prediction patterns and performance over time</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{% url 'predictions:risk_map' %}" class="btn btn-outline-primary">
+                    <i class="fa fa-map me-1"></i> Risk Map
+                </a>
+                <a href="{% url 'predictions:dashboard' %}" class="btn btn-outline-primary">
+                    <i class="fa fa-chart-bar me-1"></i> Dashboard
+                </a>
+                <button type="button" class="btn btn-primary" onclick="exportAnalysis()">
+                    <i class="fa fa-download me-1"></i> Export Analysis
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Range Controls -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Analysis Period</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" class="row align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">Time Range</label>
+                            <select name="time_range" class="form-select" onchange="toggleCustomDates(this.value)">
+                                <option value="1_month" {% if time_range == '1_month' %}selected{% endif %}>Last Month</option>
+                                <option value="3_months" {% if time_range == '3_months' %}selected{% endif %}>Last 3 Months</option>
+                                <option value="6_months" {% if time_range == '6_months' %}selected{% endif %}>Last 6 Months</option>
+                                <option value="1_year" {% if time_range == '1_year' %}selected{% endif %}>Last Year</option>
+                                <option value="all_time" {% if time_range == 'all_time' %}selected{% endif %}>All Time</option>
+                                <option value="custom" {% if time_range == 'custom' %}selected{% endif %}>Custom Range</option>
+                            </select>
+                        </div>
+                        <div id="custom-dates" class="col-md-6" style="{% if time_range != 'custom' %}display: none;{% endif %}">
+                            <div class="row">
+                                <div class="col-6">
+                                    <label class="form-label">Start Date</label>
+                                    <input type="date" name="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">End Date</label>
+                                    <input type="date" name="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fa fa-search me-1"></i> Update Analysis
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Current Period Info -->
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="small text-muted">Analysis Period</div>
+                                <strong>{{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }}</strong>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="small text-muted">Total Days</div>
+                                <strong>{{ daily_trends.total_days }} days</strong>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="small text-muted">Fire Season Predictions</div>
+                                <strong>{{ fire_season_predictions }}</strong>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="small text-muted">Unique Concelhos</div>
+                                <strong>{{ unique_concelhos }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Insights Row -->
+    {% if insights %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">🔍 Key Insights</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for insight in insights %}
+                        <div class="col-lg-6 mb-3">
+                            <div class="alert alert-{{ insight.severity }} mb-0">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3" style="font-size: 1.5em;">{{ insight.icon }}</div>
+                                    <div>
+                                        <strong>{{ insight.title }}</strong><br>
+                                        <small>{{ insight.description }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Overview Statistics Row -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body text-center">
+                    <div class="h2 text-primary mb-2">{{ total_predictions|floatformat:0 }}</div>
+                    <div class="text-muted">Total Predictions</div>
+                    <small class="text-success">
+                        <i class="fa fa-chart-line me-1"></i>
+                        {{ daily_trends.avg_predictions_per_day|floatformat:1 }}/day avg
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body text-center">
+                    <div class="h2 text-warning mb-2">{{ high_risk_predictions }}</div>
+                    <div class="text-muted">High Risk Predictions</div>
+                    <small class="{% if high_risk_percentage > 30 %}text-danger{% elif high_risk_percentage > 15 %}text-warning{% else %}text-success{% endif %}">
+                        <i class="fa fa-percentage me-1"></i>
+                        {{ high_risk_percentage|floatformat:1 }}% of total
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body text-center">
+                    <div class="h2 text-info mb-2">{{ geographic_analysis.total_concelhos_analyzed }}</div>
+                    <div class="text-muted">Concelhos Analyzed</div>
+                    <small class="text-info">
+                        <i class="fa fa-map-marker-alt me-1"></i>
+                        Geographic coverage
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-body text-center">
+                    <div class="h2 text-success mb-2">{{ data_quality_analysis.avg_quality_score|floatformat:2 }}</div>
+                    <div class="text-muted">Avg Data Quality</div>
+                    <small class="{% if data_quality_analysis.avg_quality_score > 0.8 %}text-success{% elif data_quality_analysis.avg_quality_score > 0.6 %}text-warning{% else %}text-danger{% endif %}">
+                        <i class="fa fa-check-circle me-1"></i>
+                        {{ data_quality_analysis.real_fwi_percentage|floatformat:1 }}% real FWI
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Daily Trends Chart -->
+        <div class="col-xl-8 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Daily Risk Trends</h5>
+                </div>
+                <div class="card-body">
+                    {% if charts.daily_trends %}
+                    <div id="daily-trends-chart" style="height: 400px;"></div>
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fa fa-chart-line fa-3x mb-3"></i>
+                        <div>No daily trend data available for selected period</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Fire Season Comparison -->
+        <div class="col-xl-4 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Fire Season Analysis</h5>
+                </div>
+                <div class="card-body">
+                    {% if charts.fire_season_comparison %}
+                    <div id="fire-season-chart" style="height: 300px;"></div>
+                    {% endif %}
+                    
+                    <!-- Fire Season Statistics -->
+                    <div class="mt-3">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="fire-season-stat p-2 rounded mb-2" style="background-color: rgba(255, 193, 7, 0.1);">
+                                    <div class="h4 text-warning mb-1">{{ fire_season_analysis.fire_season.avg_probability|floatformat:2 }}</div>
+                                    <div class="small text-muted">Fire Season Avg</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="fire-season-stat p-2 rounded mb-2" style="background-color: rgba(40, 167, 69, 0.1);">
+                                    <div class="h4 text-success mb-1">{{ fire_season_analysis.non_fire_season.avg_probability|floatformat:2 }}</div>
+                                    <div class="small text-muted">Non-Fire Season</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Difference:</span>
+                                <strong class="{% if fire_season_analysis.seasonal_difference.probability_diff > 0.3 %}text-danger{% elif fire_season_analysis.seasonal_difference.probability_diff > 0.1 %}text-warning{% else %}text-success{% endif %}">
+                                    +{{ fire_season_analysis.seasonal_difference.probability_diff|floatformat:3 }}
+                                </strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seasonal and Geographic Analysis Row -->
+    <div class="row mb-4">
+        <!-- Monthly Patterns Chart -->
+        <div class="col-xl-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Monthly Risk Patterns</h5>
+                </div>
+                <div class="card-body">
+                    {% if charts.monthly_patterns %}
+                    <div id="monthly-patterns-chart" style="height: 350px;"></div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fa fa-calendar fa-2x mb-2"></i>
+                        <div>Monthly pattern data unavailable</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Top High-Risk Concelhos -->
+        <div class="col-xl-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Top High-Risk Areas</h5>
+                </div>
+                <div class="card-body">
+                    {% if geographic_analysis.top_high_risk_concelhos %}
+                    <div class="table-responsive" style="max-height: 350px;">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Concelho</th>
+                                    <th>Avg Risk</th>
+                                    <th>High Risk Count</th>
+                                    <th>Total Predictions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for concelho in geographic_analysis.top_high_risk_concelhos %}
+                                <tr>
+                                    <td><strong>{{ concelho.concelho__name }}</strong></td>
+                                    <td>
+                                        <span class="badge {% if concelho.avg_probability > 0.7 %}bg-danger{% elif concelho.avg_probability > 0.5 %}bg-warning{% else %}bg-info{% endif %}">
+                                            {{ concelho.avg_probability|floatformat:2 }}
+                                        </span>
+                                    </td>
+                                    <td>{{ concelho.high_risk_count }}</td>
+                                    <td>{{ concelho.prediction_count }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fa fa-map-marker-alt fa-2x mb-2"></i>
+                        <div>No high-risk areas identified</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Performance and Data Quality Row -->
+    <div class="row mb-4">
+        <!-- Model Performance -->
+        <div class="col-xl-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Model Performance</h5>
+                </div>
+                <div class="card-body">
+                    {% if model_stats %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Model</th>
+                                    <th>Predictions</th>
+                                    <th>Avg Probability</th>
+                                    <th>Avg Confidence</th>
+                                    <th>High Risk %</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for model in model_stats %}
+                                <tr>
+                                    <td><strong>{{ model.ml_model__name|truncatechars:20 }}</strong></td>
+                                    <td>{{ model.prediction_count }}</td>
+                                    <td>{{ model.avg_probability|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="{% if model.avg_confidence > 0.8 %}text-success{% elif model.avg_confidence > 0.6 %}text-warning{% else %}text-danger{% endif %}">
+                                            {{ model.avg_confidence|floatformat:2 }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% widthratio model.high_risk_count model.prediction_count 100 %}%
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fa fa-robot fa-2x mb-2"></i>
+                        <div>No model performance data available</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Quality Metrics -->
+        <div class="col-xl-6 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Data Quality Metrics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="quality-metric p-3 rounded text-center" style="background-color: rgba(40, 167, 69, 0.1);">
+                                <div class="h4 text-success mb-2">{{ data_quality_analysis.real_fwi_percentage|floatformat:1 }}%</div>
+                                <div class="small text-muted">Real FWI Data</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="quality-metric p-3 rounded text-center" style="background-color: rgba(0, 123, 255, 0.1);">
+                                <div class="h4 text-primary mb-2">{{ data_quality_analysis.avg_quality_score|floatformat:2 }}</div>
+                                <div class="small text-muted">Avg Quality Score</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="quality-metric p-3 rounded text-center" style="background-color: rgba(255, 193, 7, 0.1);">
+                                <div class="h4 text-warning mb-2">{{ data_quality_analysis.high_quality_percentage|floatformat:1 }}%</div>
+                                <div class="small text-muted">High Quality</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="quality-metric p-3 rounded text-center" style="background-color: rgba(108, 117, 125, 0.1);">
+                                <div class="h4 text-secondary mb-2">{{ data_quality_analysis.avg_processing_time|floatformat:0 }}ms</div>
+                                <div class="small text-muted">Avg Processing</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Most Active Concelhos -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Most Active Concelhos (by prediction count)</h5>
+                </div>
+                <div class="card-body">
+                    {% if geographic_analysis.most_active_concelhos %}
+                    <div class="row">
+                        {% for concelho in geographic_analysis.most_active_concelhos|slice:":6" %}
+                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                            <div class="active-concelho-card p-3 text-center border rounded">
+                                <div class="h5 text-primary mb-1">{{ concelho.prediction_count }}</div>
+                                <div class="small text-muted">{{ concelho.concelho__name|truncatechars:15 }}</div>
+                                <div class="small">
+                                    <span class="badge {% if concelho.avg_probability > 0.6 %}bg-danger{% elif concelho.avg_probability > 0.4 %}bg-warning{% else %}bg-success{% endif %}">
+                                        {{ concelho.avg_probability|floatformat:2 }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fa fa-chart-bar fa-2x mb-2"></i>
+                        <div>No activity data available</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom CSS -->
+<style>
+    .fire-season-stat, .quality-metric, .active-concelho-card {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .fire-season-stat:hover, .quality-metric:hover, .active-concelho-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .alert {
+        border-left: 4px solid;
+    }
+
+    .alert-success { border-left-color: #28a745; }
+    .alert-warning { border-left-color: #ffc107; }
+    .alert-danger { border-left-color: #dc3545; }
+    .alert-info { border-left-color: #17a2b8; }
+
+    /* Night mode compatibility */
+    .night-mode .card {
+        background-color: #222 !important;
+        color: #fff !important;
+    }
+
+    .night-mode .bg-light {
+        background-color: #222 !important;
+    }
+
+    .night-mode .table {
+        color: #fff;
+    }
+
+    .night-mode .table-light {
+        background-color: #333 !important;
+        color: #fff !important;
+    }
+
+    .night-mode .form-control, .night-mode .form-select {
+        background-color: #333;
+        border-color: #444;
+        color: #fff;
+    }
+
+    .night-mode .fire-season-stat, .night-mode .quality-metric, .night-mode .active-concelho-card {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        border-color: #444;
+    }
+</style>
+
+<!-- JavaScript -->
+<script>
+    // Initialize charts when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+    });
+
+    function initializeCharts() {
+        // Daily trends chart
+        {% if charts.daily_trends %}
+        const dailyTrendsData = {{ charts.daily_trends|safe }};
+        Plotly.newPlot('daily-trends-chart', dailyTrendsData.data, dailyTrendsData.layout);
+        {% endif %}
+
+        // Monthly patterns chart
+        {% if charts.monthly_patterns %}
+        const monthlyPatternsData = {{ charts.monthly_patterns|safe }};
+        Plotly.newPlot('monthly-patterns-chart', monthlyPatternsData.data, monthlyPatternsData.layout);
+        {% endif %}
+
+        // Fire season comparison chart
+        {% if charts.fire_season_comparison %}
+        const fireSeasonData = {{ charts.fire_season_comparison|safe }};
+        Plotly.newPlot('fire-season-chart', fireSeasonData.data, fireSeasonData.layout);
+        {% endif %}
+
+        // Apply night mode if active
+        applyChartNightMode();
+    }
+
+    function applyChartNightMode() {
+        if (document.body.classList.contains('night-mode')) {
+            const darkStyle = {
+                'paper_bgcolor': '#1E1E1E',
+                'plot_bgcolor': '#1E1E1E',
+                'font.color': '#E0E0E0',
+                'xaxis.gridcolor': '#444444',
+                'yaxis.gridcolor': '#444444'
+            };
+
+            {% if charts.daily_trends %}
+            Plotly.relayout('daily-trends-chart', darkStyle);
+            {% endif %}
+
+            {% if charts.monthly_patterns %}
+            Plotly.relayout('monthly-patterns-chart', darkStyle);
+            {% endif %}
+
+            {% if charts.fire_season_comparison %}
+            Plotly.relayout('fire-season-chart', darkStyle);
+            {% endif %}
+        }
+    }
+
+    function toggleCustomDates(value) {
+        const customDates = document.getElementById('custom-dates');
+        if (value === 'custom') {
+            customDates.style.display = 'block';
+        } else {
+            customDates.style.display = 'none';
+        }
+    }
+
+    function exportAnalysis() {
+        // Placeholder for export functionality
+        alert('Export functionality coming soon!');
+    }
+
+    // Handle night mode toggle
+    document.addEventListener('nightModeToggled', function() {
+        applyChartNightMode();
+    });
+</script>
+
+{% endblock %}

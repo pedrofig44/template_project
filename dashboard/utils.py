@@ -280,3 +280,67 @@ def generate_combined_chart(df: pl.DataFrame, title: str, x_axis: str, y_axis: s
     chart_json = json.dumps(figure, cls=plotly.utils.PlotlyJSONEncoder)
     
     return chart_json
+
+
+def generate_risk_distribution_pie_chart(risk_distribution_dict, title="Risk Distribution", bg_color='#F3F6F9') -> str:
+    """
+    Generate a pie chart specifically for wildfire risk distribution with color-coded slices
+    """
+    # Define risk level colors to match the map
+    risk_colors = {
+        'Level 1 (Very Low)': '#28a745',
+        'Level 2 (Low)': '#ffc107', 
+        'Level 3 (Moderate)': '#fd7e14',
+        'Level 4 (High)': '#dc3545',
+        'Level 5 (Extreme)': '#990000'
+    }
+    
+    # Extract labels and values, filtering out zero values
+    labels = []
+    values = []
+    colors = []
+    
+    for label, count in risk_distribution_dict.items():
+        if count > 0:  # Only include non-zero values
+            labels.append(label)
+            values.append(count)
+            colors.append(risk_colors.get(label, '#6c757d'))
+    
+    # Create the pie chart
+    trace = go.Pie(
+        labels=labels,
+        values=values,
+        marker=dict(colors=colors),
+        textinfo='label+percent+value',
+        textposition='auto',
+        hovertemplate='<b>%{label}</b><br>Count: %{value}<br>Percentage: %{percent}<extra></extra>'
+    )
+    
+    layout = go.Layout(
+        title=title,
+        font=dict(
+            family="Roboto, sans-serif",
+            size=12,
+            color="#000000"
+        ),
+        paper_bgcolor=bg_color,
+        plot_bgcolor=bg_color,
+        margin=dict(l=40, r=40, t=60, b=40),
+        height=300,
+        showlegend=True,
+        legend=dict(
+            orientation="v",
+            yanchor="middle",
+            y=0.5,
+            xanchor="left",
+            x=1.05
+        )
+    )
+    
+    # Create the figure
+    figure = go.Figure(data=[trace], layout=layout)
+    
+    # Convert to JSON
+    chart_json = json.dumps(figure, cls=plotly.utils.PlotlyJSONEncoder)
+    
+    return chart_json

@@ -31,7 +31,12 @@
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="districtDropdown" style="max-height: 400px; overflow-y: auto;">
                     {% for district_code, district in distritos_data.items %}
-                    <li><a class="dropdown-item" href="#" onclick="jumpToDistrict('{{ district_code }}')">{{ district.name }}</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="jumpToDistrict('{{ district_code }}')">
+                        {{ district.name }} 
+                        {% if district.high_risk_concelhos > 0 %}
+                            <span class="badge bg-danger ms-2">{{ district.high_risk_concelhos }}</span>
+                        {% endif %}
+                    </a></li>
                     {% endfor %}
                 </ul>
             </div>
@@ -44,7 +49,7 @@
         <div class="col-xl-8 mb-4">
             <div class="card bg-light border-0 shadow h-100">
                 <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Portugal Risk Map - {{ selected_date|date:"F d, Y" }}</h5>
+                    <h5 class="mb-0">Portugal Risk Map - {{ selected_date|date:"F j, Y" }}</h5>
                     <small class="text-muted">Click on any concelho for details</small>
                 </div>
                 <div class="card-body p-0">
@@ -61,37 +66,25 @@
                     <h5 class="mb-0">Risk Level Legend</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-12 mb-2">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="risk-color-box" style="background-color: #990000; width: 20px; height: 20px; margin-right: 10px;"></div>
-                                <strong>Level 5 - Extreme Risk</strong>
-                            </div>
-                        </div>
-                        <div class="col-12 mb-2">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="risk-color-box" style="background-color: #dc3545; width: 20px; height: 20px; margin-right: 10px;"></div>
-                                <strong>Level 4 - High Risk</strong>
-                            </div>
-                        </div>
-                        <div class="col-12 mb-2">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="risk-color-box" style="background-color: #fd7e14; width: 20px; height: 20px; margin-right: 10px;"></div>
-                                <strong>Level 3 - Moderate Risk</strong>
-                            </div>
-                        </div>
-                        <div class="col-12 mb-2">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="risk-color-box" style="background-color: #ffc107; width: 20px; height: 20px; margin-right: 10px;"></div>
-                                <strong>Level 2 - Low Risk</strong>
-                            </div>
-                        </div>
-                        <div class="col-12 mb-2">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="risk-color-box" style="background-color: #28a745; width: 20px; height: 20px; margin-right: 10px;"></div>
-                                <strong>Level 1 - Very Low Risk</strong>
-                            </div>
-                        </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="risk-color-box" style="background-color: #990000; width: 20px; height: 20px; margin-right: 10px;"></div>
+                        <strong>Level 5 - Extreme Risk</strong>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="risk-color-box" style="background-color: #dc3545; width: 20px; height: 20px; margin-right: 10px;"></div>
+                        <strong>Level 4 - High Risk</strong>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="risk-color-box" style="background-color: #fd7e14; width: 20px; height: 20px; margin-right: 10px;"></div>
+                        <strong>Level 3 - Moderate Risk</strong>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="risk-color-box" style="background-color: #ffc107; width: 20px; height: 20px; margin-right: 10px;"></div>
+                        <strong>Level 2 - Low Risk</strong>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="risk-color-box" style="background-color: #28a745; width: 20px; height: 20px; margin-right: 10px;"></div>
+                        <strong>Level 1 - Very Low Risk</strong>
                     </div>
                 </div>
             </div>
@@ -129,106 +122,80 @@
                 </div>
             </div>
 
+            <!-- Risk Distribution Chart -->
+            <div class="card bg-light border-0 shadow mb-4">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Risk Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div id="risk-distribution-chart" style="height: 300px;"></div>
+                </div>
+            </div>
+
             <!-- Selected Concelho Details -->
             <div class="card bg-light border-0 shadow mb-4" id="concelho-details" style="display: none;">
                 <div class="card-header bg-transparent border-0">
-                    <h5 class="mb-0">Concelho Details</h5>
+                    <h5 class="mb-0" id="concelho-details-title">Concelho Details</h5>
                 </div>
-                <div class="card-body">
-                    <div id="concelho-info">
-                        <p class="text-muted">Click on a concelho in the map to see detailed information</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Current Weather Conditions -->
-            <div class="card bg-light border-0 shadow">
-                <div class="card-header bg-transparent border-0">
-                    <h5 class="mb-0">Current Conditions</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-6">
-                            <div class="small text-muted">Temperature</div>
-                            <div class="h6">{{ current_weather.temperature }}</div>
-                        </div>
-                        <div class="col-6">
-                            <div class="small text-muted">Humidity</div>
-                            <div class="h6">{{ current_weather.humidity }}</div>
-                        </div>
-                        <div class="col-6">
-                            <div class="small text-muted">Wind Speed</div>
-                            <div class="h6">{{ current_weather.wind_speed }}</div>
-                        </div>
-                        <div class="col-6">
-                            <div class="small text-muted">Conditions</div>
-                            <div class="h6">{{ current_weather.conditions }}</div>
-                        </div>
-                    </div>
+                <div class="card-body" id="concelho-details-content">
+                    <!-- Details will be populated by JavaScript -->
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Risk Distribution Chart Row -->
+    <!-- High Risk Alerts Row -->
+    {% if high_risk_predictions %}
     <div class="row mt-4">
         <div class="col-12">
             <div class="card bg-light border-0 shadow">
-                <div class="card-header bg-transparent border-0">
-                    <h5 class="mb-0">Risk Level Distribution</h5>
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">🚨 High Risk Areas - Immediate Attention Required</h5>
+                    <span class="badge bg-danger">{{ high_risk_count }} areas</span>
                 </div>
                 <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-xl-2 col-md-4 col-6 mb-3">
-                            <div class="risk-stat">
-                                <div class="h3 text-success">{{ risk_distribution.1 }}</div>
-                                <div class="small">Level 1 (Very Low)</div>
-                                <div class="progress mt-2" style="height: 8px;">
-                                    <div class="progress-bar bg-success" style="width: {{ risk_distribution.1|floatformat:0 }}%"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-2 col-md-4 col-6 mb-3">
-                            <div class="risk-stat">
-                                <div class="h3 text-warning">{{ risk_distribution.2 }}</div>
-                                <div class="small">Level 2 (Low)</div>
-                                <div class="progress mt-2" style="height: 8px;">
-                                    <div class="progress-bar bg-warning" style="width: {{ risk_distribution.2|floatformat:0 }}%"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-2 col-md-4 col-6 mb-3">
-                            <div class="risk-stat">
-                                <div class="h3 text-info">{{ risk_distribution.3 }}</div>
-                                <div class="small">Level 3 (Moderate)</div>
-                                <div class="progress mt-2" style="height: 8px;">
-                                    <div class="progress-bar bg-info" style="width: {{ risk_distribution.3|floatformat:0 }}%"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-2 col-md-4 col-6 mb-3">
-                            <div class="risk-stat">
-                                <div class="h3 text-danger">{{ risk_distribution.4 }}</div>
-                                <div class="small">Level 4 (High)</div>
-                                <div class="progress mt-2" style="height: 8px;">
-                                    <div class="progress-bar bg-danger" style="width: {{ risk_distribution.4|floatformat:0 }}%"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-2 col-md-4 col-6 mb-3">
-                            <div class="risk-stat">
-                                <div class="h3" style="color: #990000;">{{ risk_distribution.5 }}</div>
-                                <div class="small">Level 5 (Extreme)</div>
-                                <div class="progress mt-2" style="height: 8px;">
-                                    <div class="progress-bar" style="background-color: #990000; width: {{ risk_distribution.5|floatformat:0 }}%"></div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Concelho</th>
+                                    <th>District</th>
+                                    <th>Risk Level</th>
+                                    <th>Probability</th>
+                                    <th>Confidence</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pred in high_risk_predictions %}
+                                <tr>
+                                    <td><strong>{{ pred.concelho_name }}</strong></td>
+                                    <td>{{ pred.distrito_name }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="risk-color-box me-2" style="background-color: {{ pred.risk_color }}; width: 15px; height: 15px;"></div>
+                                            Level {{ pred.risk_level }}
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-danger">{{ pred.probability|floatformat:2 }}</span></td>
+                                    <td>{{ pred.confidence|floatformat:2 }}</td>
+                                    <td>
+                                        {% if pred.prediction %}
+                                            <span class="badge bg-danger">🔥 Fire Risk</span>
+                                        {% else %}
+                                            <span class="badge bg-success">✅ No Risk</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 
 <!-- Custom CSS -->
@@ -244,10 +211,6 @@
         background-color: rgba(255, 255, 255, 0.5);
     }
     
-    .risk-stat {
-        text-align: center;
-    }
-    
     /* Night mode compatibility */
     .night-mode .card {
         background-color: #222 !important;
@@ -261,6 +224,15 @@
     .night-mode .stat-card {
         background-color: rgba(255, 255, 255, 0.1);
     }
+
+    .night-mode .table {
+        color: #fff;
+    }
+
+    .night-mode .table-responsive {
+        background-color: #333;
+        border-radius: 5px;
+    }
 </style>
 
 <!-- Leaflet Map Script -->
@@ -268,11 +240,12 @@
     // Initialize map variables
     let map;
     let concelhoLayer;
-    let currentRiskData = {{ risk_data|safe }};
+    let currentMapData = {{ map_data_json|safe }};
     
     // Initialize map when page loads
     document.addEventListener('DOMContentLoaded', function() {
         initializeMap();
+        initializeChart();
     });
     
     function initializeMap() {
@@ -295,100 +268,127 @@
                 concelhoLayer = L.geoJSON(data, {
                     style: function(feature) {
                         const concelhoCode = feature.properties.DICO;
-                        const riskLevel = getRiskForConcelho(concelhoCode);
+                        const riskData = currentMapData[concelhoCode];
                         
-                        return {
-                            fillColor: getRiskColor(riskLevel),
-                            weight: 2,
-                            opacity: 1,
-                            color: 'white',
-                            dashArray: '3',
-                            fillOpacity: 0.7
-                        };
+                        if (riskData) {
+                            return {
+                                fillColor: riskData.risk_color,
+                                weight: 2,
+                                opacity: 1,
+                                color: 'white',
+                                dashArray: '3',
+                                fillOpacity: 0.7
+                            };
+                        } else {
+                            // Default styling for areas without data
+                            return {
+                                fillColor: '#28a745',
+                                weight: 2,
+                                opacity: 1,
+                                color: 'white',
+                                dashArray: '3',
+                                fillOpacity: 0.3
+                            };
+                        }
                     },
                     onEachFeature: function(feature, layer) {
                         const concelhoCode = feature.properties.DICO;
-                        const concelhoData = currentRiskData[concelhoCode];
+                        const concelhoName = feature.properties.NOME;
+                        const riskData = currentMapData[concelhoCode];
                         
-                        if (concelhoData) {
-                            // Add click event
-                            layer.on({
-                                click: function(e) {
-                                    showConcelhoDetails(concelhoData, concelhoCode);
-                                }
-                            });
-                            
-                            // Add hover tooltip
+                        if (riskData) {
+                            // Create popup content
                             const popupContent = `
-                                <strong>${concelhoData.name}</strong><br>
-                                Risk Level: ${concelhoData.risk_level}/5<br>
-                                Confidence: ${concelhoData.confidence.toFixed(1)}%<br>
-                                District: ${concelhoData.distrito}
+                                <div class="concelho-popup">
+                                    <h6><strong>${riskData.name}</strong></h6>
+                                    <p class="mb-1"><strong>District:</strong> ${riskData.distrito}</p>
+                                    <p class="mb-1"><strong>Risk Level:</strong> <span style="color: ${riskData.risk_color}">Level ${riskData.risk_level}</span></p>
+                                    <p class="mb-1"><strong>Probability:</strong> ${(riskData.probability * 100).toFixed(1)}%</p>
+                                    <p class="mb-1"><strong>Confidence:</strong> ${(riskData.confidence * 100).toFixed(1)}%</p>
+                                    <p class="mb-0"><strong>Prediction:</strong> ${riskData.prediction ? '🔥 Fire Risk' : '✅ No Risk'}</p>
+                                </div>
                             `;
-                            layer.bindTooltip(popupContent, {
-                                permanent: false,
-                                direction: 'auto'
+                            
+                            layer.bindPopup(popupContent);
+                            
+                            // Add click event to show details in sidebar
+                            layer.on('click', function(e) {
+                                showConcelhoDetails(riskData);
                             });
+                        } else {
+                            // Basic popup for areas without prediction data
+                            layer.bindPopup(`
+                                <div class="concelho-popup">
+                                    <h6><strong>${concelhoName}</strong></h6>
+                                    <p class="mb-0">No prediction data available</p>
+                                </div>
+                            `);
                         }
+                        
+                        // Add hover effects
+                        layer.on({
+                            mouseover: function(e) {
+                                const layer = e.target;
+                                layer.setStyle({
+                                    weight: 3,
+                                    dashArray: '',
+                                    fillOpacity: 0.9
+                                });
+                                layer.bringToFront();
+                            },
+                            mouseout: function(e) {
+                                const layer = e.target;
+                                layer.setStyle({
+                                    weight: 2,
+                                    dashArray: '3',
+                                    fillOpacity: 0.7
+                                });
+                            }
+                        });
                     }
                 }).addTo(map);
             })
             .catch(error => {
                 console.error('Error loading GeoJSON:', error);
+                document.getElementById('risk-map').innerHTML = 
+                    '<div class="alert alert-danger">Failed to load map data. Please try refreshing the page.</div>';
             });
     }
     
-    function getRiskColor(riskLevel) {
-        switch(riskLevel) {
-            case 5: return '#990000';
-            case 4: return '#dc3545';
-            case 3: return '#fd7e14';
-            case 2: return '#ffc107';
-            case 1: return '#28a745';
-            default: return '#28a745';
-        }
-    }
-    
-    function getRiskForConcelho(concelhoCode) {
-        return currentRiskData[concelhoCode] ? currentRiskData[concelhoCode].risk_level : 1;
-    }
-    
-    function showConcelhoDetails(concelhoData, concelhoCode) {
+    function showConcelhoDetails(riskData) {
         const detailsCard = document.getElementById('concelho-details');
-        const infoDiv = document.getElementById('concelho-info');
+        const titleElement = document.getElementById('concelho-details-title');
+        const contentElement = document.getElementById('concelho-details-content');
         
-        const riskLabels = {
-            1: 'Very Low Risk',
-            2: 'Low Risk', 
-            3: 'Moderate Risk',
-            4: 'High Risk',
-            5: 'Extreme Risk'
-        };
+        titleElement.textContent = riskData.name;
         
-        const riskColors = {
-            1: 'success',
-            2: 'warning',
-            3: 'info', 
-            4: 'danger',
-            5: 'dark'
-        };
+        const riskLevelText = [
+            '', 'Very Low Risk', 'Low Risk', 'Moderate Risk', 'High Risk', 'Extreme Risk'
+        ][riskData.risk_level];
         
-        infoDiv.innerHTML = `
-            <h6><strong>${concelhoData.name}</strong></h6>
-            <hr>
-            <div class="mb-2">
-                <strong>Risk Level:</strong> 
-                <span class="badge bg-${riskColors[concelhoData.risk_level]}">${concelhoData.risk_level}/5</span>
-                <span class="ms-1">${riskLabels[concelhoData.risk_level]}</span>
-            </div>
-            <div class="mb-2">
-                <strong>Confidence:</strong> ${concelhoData.confidence.toFixed(1)}%
-            </div>
-            <div class="mb-2">
-                <strong>District:</strong> ${concelhoData.distrito}
-            </div>
-            <div class="mb-2">
-                <strong>Date:</strong> {{ selected_date|date:"F d, Y" }}
+        contentElement.innerHTML = `
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="risk-color-box me-2" style="background-color: ${riskData.risk_color}; width: 25px; height: 25px;"></div>
+                        <div>
+                            <strong>Level ${riskData.risk_level}</strong><br>
+                            <small class="text-muted">${riskLevelText}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <strong>Probability:</strong><br>
+                    <span class="h5 text-${riskData.risk_level >= 4 ? 'danger' : 'success'}">${(riskData.probability * 100).toFixed(1)}%</span>
+                </div>
+                <div class="col-6">
+                    <strong>Confidence:</strong><br>
+                    <span class="h5">${(riskData.confidence * 100).toFixed(1)}%</span>
+                </div>
+                <div class="col-12 mt-3">
+                    <strong>District:</strong> ${riskData.distrito}<br>
+                    <strong>Prediction:</strong> ${riskData.prediction ? '<span class="text-danger">🔥 Fire Risk Detected</span>' : '<span class="text-success">✅ No Fire Risk</span>'}
+                </div>
             </div>
         `;
         
@@ -396,9 +396,57 @@
     }
     
     function jumpToDistrict(districtCode) {
-        // This would zoom to the selected district
-        // Implementation depends on having district boundaries
-        console.log('Jump to district:', districtCode);
+        // Find concelhos in this district and zoom to them
+        const districtConcelhos = Object.keys(currentMapData).filter(code => 
+            currentMapData[code] && code.startsWith(districtCode)
+        );
+        
+        if (districtConcelhos.length > 0) {
+            // Find bounds of all concelhos in this district
+            let bounds = null;
+            concelhoLayer.eachLayer(function(layer) {
+                const concelhoCode = layer.feature.properties.DICO;
+                if (districtConcelhos.includes(concelhoCode)) {
+                    if (bounds) {
+                        bounds.extend(layer.getBounds());
+                    } else {
+                        bounds = layer.getBounds();
+                    }
+                }
+            });
+            
+            if (bounds) {
+                map.fitBounds(bounds, { padding: [20, 20] });
+            }
+        }
     }
+    
+    function initializeChart() {
+        // Initialize the risk distribution chart
+        const chartData = {{ risk_distribution_chart|safe }};
+        Plotly.newPlot('risk-distribution-chart', chartData.data, chartData.layout);
+        
+        // Apply night mode if active
+        applyChartNightMode();
+    }
+    
+    function applyChartNightMode() {
+        if (document.body.classList.contains('night-mode')) {
+            const darkStyle = {
+                'paper_bgcolor': '#1E1E1E',
+                'plot_bgcolor': '#1E1E1E',
+                'font.color': '#E0E0E0'
+            };
+            
+            if (document.getElementById('risk-distribution-chart')) {
+                Plotly.relayout('risk-distribution-chart', darkStyle);
+            }
+        }
+    }
+    
+    // Handle night mode toggle
+    document.addEventListener('nightModeToggled', function() {
+        applyChartNightMode();
+    });
 </script>
 {% endblock %}

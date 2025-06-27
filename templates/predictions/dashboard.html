@@ -1,0 +1,611 @@
+<!-- templates/predictions/dashboard.html -->
+{% extends 'includes/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid pt-4 px-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="text-start">
+                📊 Wildfire Prediction Dashboard
+                <span class="badge bg-{{ fire_season_info.class }} ms-2">{{ fire_season_info.status }}</span>
+            </h2>
+            <p class="text-muted small mb-0">{{ fire_season_info.message }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{% url 'predictions:risk_map' %}" class="btn btn-outline-primary">
+                    <i class="fa fa-map me-1"></i> Risk Map
+                </a>
+                <button type="button" class="btn btn-primary" onclick="exportReport()">
+                    <i class="fa fa-download me-1"></i> Export Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Row -->
+    <div class="row">
+        <!-- Left Panel - Search & Filters -->
+        <div class="col-xl-3 mb-4">
+            <div class="card bg-light border-0 shadow h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Search & Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" id="prediction-form">
+                        <!-- Concelho Selection -->
+                        <div class="mb-3">
+                            <label for="concelho-select" class="form-label">Select Concelho</label>
+                            <select class="form-select" id="concelho-select" name="concelho" onchange="this.form.submit()">
+                                <option value="">Choose a concelho...</option>
+                                {% for concelho in all_concelhos %}
+                                <option value="{{ concelho.dico_code }}" 
+                                        {% if selected_concelho_code == concelho.dico_code %}selected{% endif %}>
+                                    {{ concelho.name }} ({{ concelho.distrito.name }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Date Selection -->
+                        <div class="mb-3">
+                            <label for="date-select" class="form-label">Prediction Date</label>
+                            <input type="date" class="form-control" id="date-select" name="date" 
+                                   value="{{ selected_date|date:'Y-m-d' }}" onchange="this.form.submit()">
+                        </div>
+
+                        <!-- Quick Date Buttons -->
+                        <div class="mb-3">
+                            <div class="btn-group w-100" role="group">
+                                <a href="?concelho={{ selected_concelho_code }}&date={{ today|date:'Y-m-d' }}" 
+                                   class="btn btn-sm {% if selected_date == today %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                    Today
+                                </a>
+                                <a href="?concelho={{ selected_concelho_code }}&date={{ tomorrow|date:'Y-m-d' }}" 
+                                   class="btn btn-sm {% if selected_date == tomorrow %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                    Tomorrow
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Comparison Mode Toggle -->
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="comparison-toggle" 
+                                       name="compare" value="true" {% if comparison_mode %}checked{% endif %}
+                                       onchange="toggleComparisonMode()">
+                                <label class="form-check-label" for="comparison-toggle">
+                                    Comparison Mode
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Comparison Selection (shown when comparison mode is on) -->
+                        {% if comparison_mode %}
+                        <div id="comparison-section" class="mb-3">
+                            <label class="form-label">Compare with:</label>
+                            <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px; padding: 10px;">
+                                {% for concelho in all_concelhos %}
+                                {% if concelho.dico_code != selected_concelho_code %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="compare_concelho" 
+                                           value="{{ concelho.dico_code }}" id="comp_{{ concelho.dico_code }}"
+                                           {% if concelho.dico_code in comparison_concelhos %}checked{% endif %}>
+                                    <label class="form-check-label small" for="comp_{{ concelho.dico_code }}">
+                                        {{ concelho.name }}
+                                    </label>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary mt-2 w-100">Update Comparison</button>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Panel - Main Results -->
+        <div class="col-xl-6 mb-4">
+            {% if prediction_result %}
+            <!-- Main Prediction Result Card -->
+            <div class="card bg-light border-0 shadow mb-4">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Prediction for {{ selected_concelho.name }}</h5>
+                    <small class="text-muted">{{ selected_date|date:"F j, Y" }}</small>
+                </div>
+                <div class="card-body">
+                    <!-- Main Prediction Display -->
+                    <div class="row text-center mb-4">
+                        <div class="col-md-4">
+                            <div class="prediction-stat">
+                                <div class="h1 mb-2" style="color: {% if prediction_result.probability > 0.5 %}#dc3545{% else %}#28a745{% endif %}">
+                                    {% widthratio prediction_result.probability 1 100 %}%
+                                </div>
+                                <div class="text-muted">Risk Probability</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="prediction-stat">
+                                <div class="h1 mb-2">
+                                    {% if prediction_result.prediction %}
+                                        <span class="text-danger">🔥</span>
+                                    {% else %}
+                                        <span class="text-success">✅</span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted">
+                                    {% if prediction_result.prediction %}Fire Risk{% else %}No Risk{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="prediction-stat">
+                                <div class="h1 mb-2 text-primary">
+                                    {% widthratio prediction_result.confidence 1 100 %}%
+                                </div>
+                                <div class="text-muted">Confidence</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Risk Level Indicator -->
+                    <div class="text-center mb-4">
+                        <div class="d-inline-flex align-items-center p-3 rounded" 
+                             style="background-color: {% if prediction_result.risk_level == 5 %}#990000{% elif prediction_result.risk_level == 4 %}#dc3545{% elif prediction_result.risk_level == 3 %}#fd7e14{% elif prediction_result.risk_level == 2 %}#ffc107{% else %}#28a745{% endif %}20;">
+                            <div class="me-3" style="width: 30px; height: 30px; background-color: {% if prediction_result.risk_level == 5 %}#990000{% elif prediction_result.risk_level == 4 %}#dc3545{% elif prediction_result.risk_level == 3 %}#fd7e14{% elif prediction_result.risk_level == 2 %}#ffc107{% else %}#28a745{% endif %}; border-radius: 50%;"></div>
+                            <div>
+                                <strong>Risk Level {{ prediction_result.risk_level }}</strong><br>
+                                <small>
+                                    {% if prediction_result.risk_level == 5 %}Extreme Risk
+                                    {% elif prediction_result.risk_level == 4 %}High Risk
+                                    {% elif prediction_result.risk_level == 3 %}Moderate Risk
+                                    {% elif prediction_result.risk_level == 2 %}Low Risk
+                                    {% else %}Very Low Risk{% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Prediction Metadata -->
+                    <div class="row text-center">
+                        <div class="col-md-6">
+                            <small class="text-muted">Model: {{ prediction_result.model_name|default:"ResNet Model" }}</small>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                {% if prediction_result.data_source == 'stored' %}
+                                    Generated: {{ prediction_result.created_at|date:"M d, H:i" }}
+                                {% else %}
+                                    Generated: Just now
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature Analysis Card -->
+            {% if feature_analysis %}
+            <div class="card bg-light border-0 shadow mb-4">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Contributing Factors Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- FWI Analysis -->
+                        {% if feature_analysis.fwi_analysis %}
+                        <div class="col-md-6 mb-3">
+                            <div class="factor-card p-3 border rounded">
+                                <h6 class="text-primary mb-2">🌡️ Fire Weather Index</h6>
+                                <div class="d-flex justify-content-between">
+                                    <span>Current FWI:</span>
+                                    <strong class="{% if feature_analysis.fwi_analysis.risk_level == 'high' %}text-danger{% elif feature_analysis.fwi_analysis.risk_level == 'moderate' %}text-warning{% else %}text-success{% endif %}">
+                                        {{ feature_analysis.fwi_analysis.current|floatformat:1 }}
+                                    </strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Week Average:</span>
+                                    <span>{{ feature_analysis.fwi_analysis.average_week|floatformat:1 }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Trend:</span>
+                                    <span class="{% if feature_analysis.fwi_analysis.trend == 'increasing' %}text-danger{% else %}text-success{% endif %}">
+                                        {{ feature_analysis.fwi_analysis.trend|capfirst }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Land Use Analysis -->
+                        {% if feature_analysis.land_use_analysis %}
+                        <div class="col-md-6 mb-3">
+                            <div class="factor-card p-3 border rounded">
+                                <h6 class="text-success mb-2">🌲 Forest Coverage</h6>
+                                <div class="d-flex justify-content-between">
+                                    <span>Forest %:</span>
+                                    <strong class="{% if feature_analysis.land_use_analysis.risk_factor == 'high' %}text-danger{% elif feature_analysis.land_use_analysis.risk_factor == 'moderate' %}text-warning{% else %}text-success{% endif %}">
+                                        {{ feature_analysis.land_use_analysis.forest_percentage|floatformat:1 }}%
+                                    </strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Risk Factor:</span>
+                                    <span class="{% if feature_analysis.land_use_analysis.risk_factor == 'high' %}text-danger{% elif feature_analysis.land_use_analysis.risk_factor == 'moderate' %}text-warning{% else %}text-success{% endif %}">
+                                        {{ feature_analysis.land_use_analysis.risk_factor|capfirst }}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Type:</span>
+                                    <span>{{ feature_analysis.land_use_analysis.primary_land_use|capfirst }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Temporal Analysis -->
+                        {% if feature_analysis.temporal_analysis %}
+                        <div class="col-md-6 mb-3">
+                            <div class="factor-card p-3 border rounded">
+                                <h6 class="text-warning mb-2">📅 Seasonal Factor</h6>
+                                <div class="d-flex justify-content-between">
+                                    <span>Season Risk:</span>
+                                    <strong class="{% if feature_analysis.temporal_analysis.season_risk == 'peak' %}text-danger{% elif feature_analysis.temporal_analysis.season_risk == 'high' %}text-warning{% else %}text-success{% endif %}">
+                                        {{ feature_analysis.temporal_analysis.season_risk|capfirst }}
+                                    </strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Fire Season:</span>
+                                    <span class="{% if feature_analysis.temporal_analysis.fire_season %}text-warning{% else %}text-success{% endif %}">
+                                        {% if feature_analysis.temporal_analysis.fire_season %}Active{% else %}Inactive{% endif %}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Day of Year:</span>
+                                    <span>{{ feature_analysis.temporal_analysis.day_of_year }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Historical Risk -->
+                        {% if feature_analysis.risk_history_analysis %}
+                        <div class="col-md-6 mb-3">
+                            <div class="factor-card p-3 border rounded">
+                                <h6 class="text-info mb-2">📊 Historical Risk</h6>
+                                <div class="d-flex justify-content-between">
+                                    <span>Historical Mean:</span>
+                                    <strong>{{ feature_analysis.risk_history_analysis.historical_mean|floatformat:2 }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Trend:</span>
+                                    <span class="{% if feature_analysis.risk_history_analysis.risk_trend == 'above_average' %}text-warning{% else %}text-success{% endif %}">
+                                        {% if feature_analysis.risk_history_analysis.risk_trend == 'above_average' %}Above Average{% else %}Average{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Comparison Results -->
+            {% if comparison_results %}
+            <div class="card bg-light border-0 shadow mb-4">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Comparison Results</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Concelho</th>
+                                    <th>District</th>
+                                    <th>Risk Level</th>
+                                    <th>Probability</th>
+                                    <th>Prediction</th>
+                                    <th>Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for result in comparison_results %}
+                                <tr>
+                                    <td><strong>{{ result.concelho.name }}</strong></td>
+                                    <td>{{ result.concelho.distrito.name }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-2" style="width: 15px; height: 15px; background-color: {% if result.risk_level == 5 %}#990000{% elif result.risk_level == 4 %}#dc3545{% elif result.risk_level == 3 %}#fd7e14{% elif result.risk_level == 2 %}#ffc107{% else %}#28a745{% endif %}; border-radius: 50%;"></div>
+                                            Level {{ result.risk_level }}
+                                        </div>
+                                    </td>
+                                    <td><span class="badge {% if result.probability > 0.5 %}bg-danger{% else %}bg-success{% endif %}">{{ result.probability|floatformat:2 }}</span></td>
+                                    <td>
+                                        {% if result.prediction %}
+                                            <span class="text-danger">🔥 Risk</span>
+                                        {% else %}
+                                            <span class="text-success">✅ Safe</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ result.confidence|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <!-- No Prediction Selected -->
+            <div class="card bg-light border-0 shadow">
+                <div class="card-body text-center py-5">
+                    <i class="fa fa-search fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Select a concelho to view detailed predictions</h5>
+                    <p class="text-muted">Use the search panel on the left to choose a concelho and date for analysis.</p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if prediction_error %}
+            <div class="card bg-light border-0 shadow">
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        {{ prediction_error }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Panel - Charts & Historical Data -->
+        <div class="col-xl-3 mb-4">
+            {% if historical_data %}
+            <!-- Historical Trend Chart -->
+            <div class="card bg-light border-0 shadow mb-4">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">30-Day Trend</h5>
+                </div>
+                <div class="card-body">
+                    {% if historical_data.trend_chart %}
+                    <div id="trend-chart" style="height: 300px;"></div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fa fa-chart-line fa-2x mb-2"></i>
+                        <div>Trend chart unavailable</div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Trend Statistics -->
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Average Probability:</span>
+                            <strong>{% widthratio historical_data.average_probability 1 100 %}%</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Trend Direction:</span>
+                            <span class="{% if historical_data.trend_direction == 'increasing' %}text-danger{% else %}text-success{% endif %}">
+                                {{ historical_data.trend_direction|capfirst }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Quick Actions -->
+            <div class="card bg-light border-0 shadow mb-4">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    {% if selected_concelho_code %}
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'predictions:risk_map' %}?jump_to={{ selected_concelho_code }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fa fa-map-marker-alt me-1"></i> View on Map
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="shareLocation()">
+                            <i class="fa fa-share me-1"></i> Share Location
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="setAlert()">
+                            <i class="fa fa-bell me-1"></i> Set Alert
+                        </button>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="fa fa-hand-pointer fa-2x mb-2"></i>
+                        <div>Select a concelho to see quick actions</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Fire Season Info -->
+            <div class="card bg-light border-0 shadow">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Fire Season Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <span class="badge bg-{{ fire_season_info.class }} fs-6 px-3 py-2">
+                            {{ fire_season_info.status }}
+                        </span>
+                    </div>
+                    <p class="text-muted small text-center mb-0">{{ fire_season_info.message }}</p>
+                    
+                    <hr>
+                    <div class="small">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Season:</span>
+                            <strong>May 1 - Oct 31</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Current Date:</span>
+                            <strong>{{ selected_date|date:"M d, Y" }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom CSS -->
+<style>
+    .prediction-stat {
+        padding: 15px;
+        border-radius: 8px;
+        background-color: rgba(255, 255, 255, 0.3);
+        margin-bottom: 10px;
+    }
+
+    .factor-card {
+        background-color: rgba(255, 255, 255, 0.5);
+        transition: all 0.3s ease;
+    }
+
+    .factor-card:hover {
+        background-color: rgba(255, 255, 255, 0.8);
+        transform: translateY(-2px);
+    }
+
+    #concelho-select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    }
+
+    /* Night mode compatibility */
+    .night-mode .card {
+        background-color: #222 !important;
+        color: #fff !important;
+    }
+
+    .night-mode .bg-light {
+        background-color: #222 !important;
+    }
+
+    .night-mode .factor-card {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: #444;
+    }
+
+    .night-mode .factor-card:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .night-mode .prediction-stat {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .night-mode .table {
+        color: #fff;
+    }
+
+    .night-mode .form-control, .night-mode .form-select {
+        background-color: #333;
+        border-color: #444;
+        color: #fff;
+    }
+
+    .night-mode .form-control:focus, .night-mode .form-select:focus {
+        background-color: #444;
+        border-color: #555;
+        color: #fff;
+    }
+</style>
+
+<!-- JavaScript -->
+<script>
+    // Initialize charts when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if historical_data.trend_chart %}
+        initializeTrendChart();
+        {% endif %}
+    });
+
+    function initializeTrendChart() {
+        const chartData = {{ historical_data.trend_chart|safe }};
+        Plotly.newPlot('trend-chart', chartData.data, chartData.layout);
+        
+        // Apply night mode if active
+        applyChartNightMode();
+    }
+
+    function applyChartNightMode() {
+        if (document.body.classList.contains('night-mode')) {
+            const darkStyle = {
+                'paper_bgcolor': '#1E1E1E',
+                'plot_bgcolor': '#1E1E1E',
+                'font.color': '#E0E0E0',
+                'xaxis.gridcolor': '#444444',
+                'yaxis.gridcolor': '#444444'
+            };
+            
+            if (document.getElementById('trend-chart')) {
+                Plotly.relayout('trend-chart', darkStyle);
+            }
+        }
+    }
+
+    function toggleComparisonMode() {
+        const toggle = document.getElementById('comparison-toggle');
+        const form = document.getElementById('prediction-form');
+        
+        if (toggle.checked) {
+            // Add hidden input to maintain current selections
+            const hiddenDate = document.createElement('input');
+            hiddenDate.type = 'hidden';
+            hiddenDate.name = 'date';
+            hiddenDate.value = document.getElementById('date-select').value;
+            form.appendChild(hiddenDate);
+            
+            const hiddenConcelho = document.createElement('input');
+            hiddenConcelho.type = 'hidden';
+            hiddenConcelho.name = 'concelho';
+            hiddenConcelho.value = document.getElementById('concelho-select').value;
+            form.appendChild(hiddenConcelho);
+        }
+        
+        form.submit();
+    }
+
+    function exportReport() {
+        // Placeholder for export functionality
+        alert('Export functionality coming soon!');
+    }
+
+    function shareLocation() {
+        const url = window.location.href;
+        if (navigator.share) {
+            navigator.share({
+                title: 'Wildfire Prediction for {{ selected_concelho.name|default:"Selected Location" }}',
+                url: url
+            });
+        } else {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Location link copied to clipboard!');
+            });
+        }
+    }
+
+    function setAlert() {
+        // Placeholder for alert functionality
+        alert('Alert functionality coming soon!');
+    }
+
+    // Handle night mode toggle
+    document.addEventListener('nightModeToggled', function() {
+        applyChartNightMode();
+    });
+
+    // Make concelho select searchable (if you have a search library)
+    // $('#concelho-select').select2();
+</script>
+
+{% endblock %}
