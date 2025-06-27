@@ -865,74 +865,86 @@ def prediction_risk_map(request):
     # Get fire season information
     fire_season_info = _get_fire_season_info(selected_date)
     
+    # Get ALL concelhos first
+    all_concelhos = Concelho.objects.all()
+    
     # Fetch latest predictions for the selected date/type
     predictions = WildfirePrediction.get_latest_predictions(prediction_type)
     
-    # If no predictions available, use empty dataset
-    if not predictions.exists():
-        # Fallback: get all concelhos with default safe values
-        all_concelhos = Concelho.objects.all()
-        predictions_data = []
-        for concelho in all_concelhos:
+    # Create a dictionary of predictions by concelho code for easy lookup
+    predictions_dict = {}
+    for pred in predictions:
+        predictions_dict[pred.concelho.dico_code] = pred
+    
+    # Process all concelhos, with or without predictions
+    predictions_data = []
+    for concelho in all_concelhos:
+        # Check if we have a prediction for this concelho
+        if concelho.dico_code in predictions_dict:
+            pred = predictions_dict[concelho.dico_code]
+            # Calculate risk level if not stored
+            risk_level = _calculate_risk_level_from_probability(float(pred.probability))
+            
             predictions_data.append({
                 'concelho_code': concelho.dico_code,
                 'concelho_name': concelho.name,
                 'distrito_code': str(concelho.distrito.district_code),
                 'distrito_name': concelho.distrito.name,
-                'probability': 0.1,
-                'risk_level': 1,
-                'risk_color': '#28a745',
-                'prediction': False,
-                'confidence': 0.0,
-                'fire_season': fire_season_info['is_fire_season']
-            })
-    else:
-        # Process actual predictions
-        predictions_data = []
-        for pred in predictions:
-            # Calculate risk level if not stored
-            risk_level = _calculate_risk_level_from_probability(float(pred.probability))
-            
-            predictions_data.append({
-                'concelho_code': pred.concelho.dico_code,
-                'concelho_name': pred.concelho.name,
-                'distrito_code': str(pred.concelho.distrito.district_code),
-                'distrito_name': pred.concelho.distrito.name,
                 'probability': float(pred.probability),
                 'risk_level': risk_level,
-                'risk_color': _get_risk_color(risk_level),
+                'risk_color': _get_risk_color(risk_level) if concelho.in_wildfire_training else '#808080',
                 'prediction': pred.prediction,
                 'confidence': float(pred.confidence),
                 'fire_season': pred.fire_season,
                 'fwi': float(pred.fwi) if pred.fwi else 0,
                 'forest_percentage': float(pred.forest_percentage) if pred.forest_percentage else 0,
+                'in_training_data': concelho.in_wildfire_training
+            })
+        else:
+            # No prediction available - use default values
+            predictions_data.append({
+                'concelho_code': concelho.dico_code,
+                'concelho_name': concelho.name,
+                'distrito_code': str(concelho.distrito.district_code),
+                'distrito_name': concelho.distrito.name,
+                'probability': 0.0,
+                'risk_level': 0,  # Use 0 for no data
+                'risk_color': '#808080',  # Grey for no data or not in training
+                'prediction': False,
+                'confidence': 0.0,
+                'fire_season': fire_season_info['is_fire_season'],
+                'in_training_data': concelho.in_wildfire_training
             })
     
-    # Calculate risk distribution statistics
+    # Calculate risk distribution statistics (only for concelhos with predictions in training data)
     risk_counts = defaultdict(int)
-    total_concelhos = len(predictions_data)
+    total_concelhos = len(all_concelhos)
+    concelhos_with_predictions = 0
     
     for pred in predictions_data:
-        risk_counts[pred['risk_level']] += 1
+        if pred['in_training_data'] and pred['risk_level'] > 0:
+            risk_counts[pred['risk_level']] += 1
+            concelhos_with_predictions += 1
     
     # Calculate percentages for risk distribution
     risk_distribution = {}
     for level in range(1, 6):
         count = risk_counts[level]
-        percentage = (count / total_concelhos * 100) if total_concelhos > 0 else 0
+        # Calculate percentage based on concelhos with predictions
+        percentage = (count / concelhos_with_predictions * 100) if concelhos_with_predictions > 0 else 0
         risk_distribution[level] = {
             'count': count,
             'percentage': round(percentage, 1)
         }
     
-    # High risk areas (level 4 and 5)
-    high_risk_predictions = [p for p in predictions_data if p['risk_level'] >= 4]
+    # High risk areas (level 4 and 5) - only from training data
+    high_risk_predictions = [p for p in predictions_data if p['risk_level'] >= 4 and p['in_training_data']]
     high_risk_count = len(high_risk_predictions)
     
-    # Medium risk areas (level 3)
+    # Medium risk areas (level 3) - only from training data
     medium_risk_count = risk_counts[3]
     
-    # Low risk areas (level 1 and 2)
+    # Low risk areas (level 1 and 2) - only from training data
     low_risk_count = risk_counts[1] + risk_counts[2]
     
     # Prepare distrito-level data for map navigation
@@ -941,11 +953,13 @@ def prediction_risk_map(request):
     
     for distrito in distritos:
         district_predictions = [p for p in predictions_data if p['distrito_code'] == str(distrito.district_code)]
+        # Only consider training data concelhos for statistics
+        training_predictions = [p for p in district_predictions if p['in_training_data'] and p['risk_level'] > 0]
         
         # Calculate average risk level for distrito
-        if district_predictions:
-            avg_risk = sum(p['risk_level'] for p in district_predictions) / len(district_predictions)
-            max_risk = max(p['risk_level'] for p in district_predictions)
+        if training_predictions:
+            avg_risk = sum(p['risk_level'] for p in training_predictions) / len(training_predictions)
+            max_risk = max(p['risk_level'] for p in training_predictions)
         else:
             avg_risk = 1
             max_risk = 1
@@ -955,7 +969,8 @@ def prediction_risk_map(request):
             'avg_risk_level': round(avg_risk, 1),
             'max_risk_level': max_risk,
             'concelhos_count': len(district_predictions),
-            'high_risk_concelhos': len([p for p in district_predictions if p['risk_level'] >= 4])
+            'training_concelhos_count': len(training_predictions),
+            'high_risk_concelhos': len([p for p in training_predictions if p['risk_level'] >= 4])
         }
     
     # Create map data JSON for JavaScript
@@ -969,10 +984,11 @@ def prediction_risk_map(request):
             'probability': pred['probability'],
             'prediction': pred['prediction'],
             'confidence': pred['confidence'],
-            'fire_season': pred['fire_season']
+            'fire_season': pred['fire_season'],
+            'in_training_data': pred['in_training_data']
         }
     
-    # Generate risk distribution pie chart (only include levels with data)
+    # Generate risk distribution pie chart (only include levels with data from training concelhos)
     chart_data = {}
     for level in range(1, 6):
         count = risk_distribution[level]['count']
@@ -990,7 +1006,7 @@ def prediction_risk_map(request):
     if chart_data:
         risk_distribution_chart = generate_pie_chart(
             data=chart_data,
-            title=f"Risk Distribution - {selected_date.strftime('%B %d, %Y')}",
+            title=f"Risk Distribution - {selected_date.strftime('%B %d, %Y')} (Training Data Only)",
             height=300
         )
     else:
@@ -1000,6 +1016,10 @@ def prediction_risk_map(request):
             title="No Prediction Data Available",
             height=300
         )
+    
+    # Count of concelhos in/out of training data
+    in_training_count = len([p for p in predictions_data if p['in_training_data']])
+    out_of_training_count = total_concelhos - in_training_count
     
     # Prepare context for template
     context = {
@@ -1015,15 +1035,16 @@ def prediction_risk_map(request):
         'fire_season_message': fire_season_info['message'],
         'current_date': timezone.now(),
         
-        # Risk statistics
+        # Risk statistics (only for training data)
         'risk_distribution': risk_distribution,
         'risk_distribution_chart': risk_distribution_chart,
         'high_risk_count': high_risk_count,
         'medium_risk_count': medium_risk_count,
         'low_risk_count': low_risk_count,
         'total_concelhos': total_concelhos,
+        'concelhos_with_predictions': concelhos_with_predictions,
         
-        # High risk areas for alerts
+        # High risk areas for alerts (only from training data)
         'high_risk_predictions': high_risk_predictions[:10],  # Top 10 for display
         
         # Map and navigation data
@@ -1033,6 +1054,10 @@ def prediction_risk_map(request):
         # Prediction metadata
         'prediction_type': prediction_type,
         'predictions_count': len(predictions_data),
+        
+        # Training data statistics
+        'in_training_count': in_training_count,
+        'out_of_training_count': out_of_training_count,
     }
     
     return render(request, 'predictions/risk_map.html', context)

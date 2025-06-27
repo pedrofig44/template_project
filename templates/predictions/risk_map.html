@@ -61,6 +61,7 @@
         <!-- Right Sidebar -->
         <div class="col-xl-4">
             <!-- Risk Level Legend -->
+            <!-- Updated Risk Level Legend section -->
             <div class="card bg-light border-0 shadow mb-4">
                 <div class="card-header bg-transparent border-0">
                     <h5 class="mb-0">Risk Level Legend</h5>
@@ -85,6 +86,21 @@
                     <div class="d-flex align-items-center mb-2">
                         <div class="risk-color-box" style="background-color: #28a745; width: 20px; height: 20px; margin-right: 10px;"></div>
                         <strong>Level 1 - Very Low Risk</strong>
+                    </div>
+
+                    <!-- Add separator line -->
+                    <hr class="my-3">
+
+                    <!-- Add grey color for non-training data -->
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="risk-color-box" style="background-color: #808080; width: 20px; height: 20px; margin-right: 10px;"></div>
+                        <span class="text-muted">Not in Training Data</span>
+                    </div>
+
+                    <!-- Add training data statistics -->
+                    <div class="mt-3 small text-muted">
+                        <i class="fa fa-info-circle me-1"></i>
+                        {{ in_training_count }} of {{ total_concelhos }} concelhos included in model
                     </div>
                 </div>
             </div>
@@ -267,53 +283,76 @@
             .then(data => {
                 concelhoLayer = L.geoJSON(data, {
                     style: function(feature) {
-                        const concelhoCode = feature.properties.DICO;
+                        const concelhoCode = feature.properties.dico || feature.properties.DICO;
                         const riskData = currentMapData[concelhoCode];
                         
-                        if (riskData) {
+                        // Check if concelho is in training data
+                        if (riskData && riskData.in_training_data === false) {
+                            // Grey color for concelhos not in training data
                             return {
-                                fillColor: riskData.risk_color,
+                                fillColor: '#808080',  // Grey color
                                 weight: 2,
                                 opacity: 1,
                                 color: 'white',
                                 dashArray: '3',
                                 fillOpacity: 0.7
                             };
-                        } else {
-                            // Default styling for areas without data
-                            return {
-                                fillColor: '#28a745',
-                                weight: 2,
-                                opacity: 1,
-                                color: 'white',
-                                dashArray: '3',
-                                fillOpacity: 0.3
-                            };
                         }
+                        
+                        // Default style for concelhos in training data
+                        const fillColor = riskData ? riskData.risk_color : '#e0e0e0';
+                        
+                        return {
+                            fillColor: fillColor,
+                            weight: 2,
+                            opacity: 1,
+                            color: 'white',
+                            dashArray: '3',
+                            fillOpacity: 0.7
+                        };
                     },
                     onEachFeature: function(feature, layer) {
-                        const concelhoCode = feature.properties.DICO;
-                        const concelhoName = feature.properties.NOME;
+                        const concelhoCode = feature.properties.dico || feature.properties.DICO;
+                        const concelhoName = feature.properties.Concelho || feature.properties.concelho || 'Unknown';
                         const riskData = currentMapData[concelhoCode];
                         
                         if (riskData) {
-                            // Create popup content
-                            const popupContent = `
+                            // Update popup content to show training data status
+                            let popupContent = `
                                 <div class="concelho-popup">
                                     <h6><strong>${riskData.name}</strong></h6>
-                                    <p class="mb-1"><strong>District:</strong> ${riskData.distrito}</p>
-                                    <p class="mb-1"><strong>Risk Level:</strong> <span style="color: ${riskData.risk_color}">Level ${riskData.risk_level}</span></p>
-                                    <p class="mb-1"><strong>Probability:</strong> ${(riskData.probability * 100).toFixed(1)}%</p>
-                                    <p class="mb-1"><strong>Confidence:</strong> ${(riskData.confidence * 100).toFixed(1)}%</p>
-                                    <p class="mb-0"><strong>Prediction:</strong> ${riskData.prediction ? '🔥 Fire Risk' : '✅ No Risk'}</p>
-                                </div>
+                                    <p class="mb-0">District: ${riskData.distrito}</p>
                             `;
+                            
+                            if (riskData.in_training_data === false) {
+                                // Special message for concelhos not in training data
+                                popupContent += `
+                                    <hr class="my-2">
+                                    <p class="mb-0 text-muted"><em>Not included in training dataset</em></p>
+                                    <p class="mb-0 text-muted small">No predictions available</p>
+                                `;
+                            } else {
+                                // Normal risk information for concelhos in training data
+                                popupContent += `
+                                    <hr class="my-2">
+                                    <p class="mb-0">Risk Level: <strong class="text-${riskData.risk_level >= 4 ? 'danger' : 'success'}">Level ${riskData.risk_level}</strong></p>
+                                    <p class="mb-0">Probability: ${(riskData.probability * 100).toFixed(1)}%</p>
+                                    <p class="mb-0">Prediction: ${riskData.prediction ? '🔥 Fire Risk' : '✅ No Risk'}</p>
+                                `;
+                            }
+                            
+                            popupContent += '</div>';
                             
                             layer.bindPopup(popupContent);
                             
-                            // Add click event to show details in sidebar
+                            // Add click event to show details in sidebar (only for training data)
                             layer.on('click', function(e) {
-                                showConcelhoDetails(riskData);
+                                if (riskData.in_training_data !== false) {
+                                    showConcelhoDetails(riskData);
+                                } else {
+                                    // Show special details for non-training concelhos
+                                    showNonTrainingConcelhoDetails(riskData);
+                                }
                             });
                         } else {
                             // Basic popup for areas without prediction data
@@ -353,6 +392,36 @@
                 document.getElementById('risk-map').innerHTML = 
                     '<div class="alert alert-danger">Failed to load map data. Please try refreshing the page.</div>';
             });
+    }
+    
+    // Add new function to handle non-training concelho details
+    function showNonTrainingConcelhoDetails(riskData) {
+        const detailsCard = document.getElementById('concelho-details');
+        const titleElement = document.getElementById('concelho-details-title');
+        const contentElement = document.getElementById('concelho-details-content');
+        
+        titleElement.textContent = riskData.name;
+        
+        contentElement.innerHTML = `
+            <div class="row">
+                <div class="col-12">
+                    <div class="alert alert-secondary">
+                        <h6 class="alert-heading">
+                            <i class="fa fa-info-circle me-2"></i>Not in Training Dataset
+                        </h6>
+                        <hr>
+                        <p class="mb-2">This concelho was not included in the wildfire prediction model training data.</p>
+                        <p class="mb-0 small">No risk predictions are available for this area.</p>
+                    </div>
+                    <div class="mt-3">
+                        <strong>District:</strong> ${riskData.distrito}<br>
+                        <strong>Status:</strong> <span class="badge bg-secondary">No Coverage</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        detailsCard.style.display = 'block';
     }
     
     function showConcelhoDetails(riskData) {
